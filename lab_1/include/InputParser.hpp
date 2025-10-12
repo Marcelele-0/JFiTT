@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <set>
 
 class InputParser {
 public:
@@ -7,11 +8,15 @@ public:
     bool validate() const;
     std::string getAlgorithm() const;
     std::string getPattern() const;
+    std::string getText() const;
+    std::set<char> getAlphabet() const;
     std::string getFilename() const;
-    std::string getFileContent() const;
+
 private:
+    bool isValid_;
     std::string algorithm_;
     std::string pattern_;
+    std::string text_;
+    std::set<char> alphabet_;
     std::string filename_;
-    bool valid_;
 };

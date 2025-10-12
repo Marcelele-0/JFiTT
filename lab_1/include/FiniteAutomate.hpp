@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <map>
+#include <algorithm>
 
 class FiniteAutomate {
 public:
@@ -10,12 +10,10 @@ public:
     void buildAutomate();
     int transition(int state, char ch) const;
     std::vector<int> runSearch(const std::string& text) const;
-    void reset();
 private:
-    std::vector<int> automateStates_;
+    std::string pattern_;
+    std::set<char> alphabet_;
     int startingState_;
     std::set<int> acceptingStates_;
-    std::set<char> alphabet_;
-    std::map<std::pair<int, char>, int> stateFunction_;
-    std::string pattern_;
+    std::vector<std::vector<int>> transitionTable_;
 };
