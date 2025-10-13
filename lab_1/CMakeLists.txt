@@ -17,3 +17,15 @@ add_executable(test_fa
     src/FiniteAutomate.cpp
 )
 target_include_directories(test_fa PRIVATE include)
+
+add_executable(test_kmp
+    test/TestKMPMatcher.cpp
+    src/KMPMatcher.cpp
+)
+target_include_directories(test_kmp PRIVATE include)
+
+add_executable(test_parser
+    test/TestInputParser.cpp
+    src/InputParser.cpp
+)
+target_include_directories(test_parser PRIVATE include)
