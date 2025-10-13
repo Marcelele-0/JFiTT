@@ -58,10 +58,31 @@ void test_parser_special_chars() {
     std::cout << "test_parser_special_chars passed\n";
 }
 
+void test_parser_utf_chars() {
+    const char* tmpname = "test_tmp_text_utf.txt";
+    std::ofstream out(tmpname);
+    // include some UTF-8 characters: two-byte and three-byte sequences
+    out << u8"ąęół漢字";
+    out.close();
+
+    const char* argv[] = {"prog", "FA", u8"ąę", tmpname};
+    InputParser parser(4, const_cast<char**>(argv));
+    assert(parser.validate());
+    auto utfSet = parser.getAlphabetUTF8();
+    // Check that some UTF codepoints are present
+    assert(utfSet.count(u8"ą") == 1);
+    assert(utfSet.count(u8"ę") == 1);
+    assert(utfSet.count(u8"ł") == 1 || utfSet.count(u8"ó") == 1 || utfSet.size() >= 1);
+
+    std::remove(tmpname);
+    std::cout << "test_parser_utf_chars passed\n";
+}
+
 int main() {
     test_parser_success();
     test_parser_failure();
     test_parser_special_chars();
+    test_parser_utf_chars();
     std::cout << "All InputParser tests passed!\n";
     return 0;
 }

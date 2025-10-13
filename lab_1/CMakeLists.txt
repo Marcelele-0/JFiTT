@@ -10,6 +10,7 @@ add_executable(pattern_search
     src/main.cpp
     src/InputParser.cpp
     src/FiniteAutomate.cpp
+    src/KMPMatcher.cpp
 )
 
 add_executable(test_fa
