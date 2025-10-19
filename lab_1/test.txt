@@ -1,0 +1,16 @@
+u8"ąęół漢字"1sdadsaaaaaaaaaa//.u8"ąęół漢字"➜  lab_1 git:(main) ✗ ./build/pattern_search FA ąęół漢字 test.txt
+Pattern found at position: 3
+Pattern found at position: 40
+➜  lab_1 git:(main) ✗ ➜  lab_1 git:(main) ✗ ./build/pattern_search FA ąęół漢字 test.txt
+Pattern found at position: 3
+Pattern found at position: 40
+➜  lab_1 git:(main) ✗ ➜  lab_1 git:(main) ✗ ./build/pattern_search FA ąęół漢字 test.txt
+Pattern found at position: 3
+Pattern found at position: 40
+➜  lab_1 git:(main) ✗ ➜  lab_1 git:(main) ✗ ./build/pattern_search FA ąęół漢字 test.txt
+Pattern found at position: 3
+Pattern found at position: 40
+➜  lab_1 git:(main) ✗ ➜  lab_1 git:(main) ✗ ./build/pattern_search FA ąęół漢字 test.txt
+Pattern found at position: 3
+Pattern found at position: 40
+➜  lab_1 git:(main) ✗ 
