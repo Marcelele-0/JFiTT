@@ -1,6 +1,7 @@
 import sys
 from input_parser import InputParser
 from finite_automate import FiniteAutomate
+from kmp_matcher import KMPMatcher
 
 
 def main(argv=None):
@@ -24,8 +25,11 @@ def main(argv=None):
             print(f"Pattern found at position: {pos}")
         return 0
     elif algorithm == "KMP":
-        print("KMP algorithm not yet implemented in Python port", file=sys.stderr)
-        return 2
+        matcher = KMPMatcher(pattern)
+        occurrences = matcher.run_search(text)
+        for pos in occurrences:
+            print(f"Pattern found at position: {pos}")
+        return 0
     else:
         print(f"Unknown algorithm: {algorithm}", file=sys.stderr)
         return 3
