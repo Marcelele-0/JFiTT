@@ -1,0 +1,103 @@
+%{
+/*
+ * Plik Flex (zadanie1.l)
+ *
+ * Zadanie:
+ * 1. Usuń białe znaki (spacje, tabulatory) na początku każdego wiersza.
+ * 2. Usuń białe znaki (spacje, tabulatory) na końcu każdego wiersza.
+ * 3. Zastąp wielokrotne spacje/tabulatory (wewnątrz wiersza) pojedynczą spacją.
+ * 4. Usuń puste wiersze (także te, które stały się puste po usunięciu białych znaków).
+ * 5. Zlicz słowa i wiersze (wynikowe) i wypisz je na końcu.
+ */
+
+#include <stdio.h>
+#include <string.h>
+
+/* Zmienne globalne do zliczania */
+long num_lines = 0;
+long num_words = 0;
+
+/* Flaga pomocnicza */
+int content_on_line = 0;
+
+%}
+
+/* Opcje Flexa */
+%option noyywrap
+%option 8bit
+
+%%
+
+^[ \t]+              { 
+                        /* Reguła 1: Ignoruj wiodące białe znaki */ 
+                    }
+
+
+[ \t]+              { 
+                        /* Reguła 2: Zastąp wielokrotne białe znaki pojedynczą spacją */
+                        printf(" "); 
+                    }
+
+
+[^ \t\n]+           {
+                        /* Reguła 3: Dopasuj "słowo" */
+                        printf("%s", yytext);
+                        num_words++;
+                        content_on_line = 1; 
+                    }
+
+
+[ \t]+\n            {
+                        /* Reguła 4: Białe znaki na końcu wiersza + nowa linia */
+                        if (content_on_line) {
+                            printf("\n");
+                            num_lines++;
+                        }
+                        content_on_line = 0; 
+                    }
+
+
+\n                  {
+                        /* Reguła 5: Sama nowa linia (jeśli wiersz nie był pusty) */
+                        if (content_on_line) {
+                            printf("\n");
+                            num_lines++;
+                        }
+                        content_on_line = 0; 
+                    }
+
+%%
+/* ----- SEKCJA KODU UŻYTKOWNIKA (C) ----- */
+
+extern FILE *yyin;
+
+int main(int argc, char **argv) {
+    
+    if (argc > 1) {
+        FILE *file = fopen(argv[1], "r");
+        if (!file) {
+            perror(argv[1]);
+            return 1;
+        }
+        yyin = file;
+    }
+
+    yylex();
+
+    /* Obsługa pliku bez znaku nowej linii na końcu */
+    if (content_on_line) {
+        printf("\n");
+        num_lines++;
+    }
+
+    /* Wypisanie wyników */
+    printf("--------------------\n");
+    printf("Liczba linii: %ld\n", num_lines);
+    printf("Liczba słów: %ld\n", num_words);
+
+    if (yyin != stdin) {
+        fclose(yyin);
+    }
+    
+    return 0;
+}

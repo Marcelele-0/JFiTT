@@ -1,0 +1,106 @@
+%{
+/*
+ * Plik Flex (zadanie2.l)
+ *
+ * Zadanie: Usuń wszystkie komentarze (#) z pliku źródłowego Python.
+ */
+
+#include <stdio.h>
+
+%}
+
+/* Opcje Flexa */
+%option noyywrap 8bit
+
+/* Definicje stanów */
+%x COMMENT
+%x SQ_STRING
+%x DQ_STRING
+%x MLS_STRING
+%x MLD_STRING
+
+/* Definicja prefiksów stringów */
+StringPrefix [rRfFbBuU]{0,3}
+
+%%
+    /* * SEKCJA REGUŁ
+     * Ten komentarz jest poprawnie wcięty.
+     */
+
+    /* --- Stan INITIAL (domyślny, poza stringiem i komentarzem) --- */
+<INITIAL>{
+    /* Poprawki dla lintera VSCode: */
+    \#              { BEGIN(COMMENT); }
+
+    {StringPrefix}["]{3} { ECHO; BEGIN(MLD_STRING); }
+    {StringPrefix}[']{3} { ECHO; BEGIN(MLS_STRING); }
+    {StringPrefix}["]  { ECHO; BEGIN(DQ_STRING); }
+    {StringPrefix}[']  { ECHO; BEGIN(SQ_STRING); }
+
+    .|\n            { ECHO; } 
+}
+
+
+    /* --- Stan COMMENT (wewnątrz komentarza #...) --- */
+<COMMENT>{
+    [^\n]+          { /* Ignoruj treść komentarza */ }
+    \n              { ECHO; BEGIN(INITIAL); }
+}
+
+
+    /* --- Stany "wewnątrz stringu" --- */
+
+    /* Wewnątrz "..." (double-quoted) */
+<DQ_STRING>{
+    ["]             { ECHO; BEGIN(INITIAL); } /* Koniec stringu */ 
+    \\[^\n]         { ECHO; } /* Znak escape */  
+    [^\n"\\]+       { ECHO; } /* Znaki w stringu (poprawka dla lintera) */
+    \n              { ECHO; } /* Błąd składni, ale wypisujemy */
+}
+
+    /* Wewnątrz '...' (single-quoted) */
+<SQ_STRING>{
+    [']             { ECHO; BEGIN(INITIAL); } /* Koniec stringu */
+    \\[^\n]         { ECHO; } /* Znak escape */
+    [^\n'\\]+       { ECHO; } /* Znaki w stringu (poprawka dla lintera) */
+    \n              { ECHO; } /* Błąd składni, ale wypisujemy */
+}
+
+    /* Wewnątrz """...""" (multi-line double) */
+<MLD_STRING>{
+    ["]{3}          { ECHO; BEGIN(INITIAL); } /* Koniec stringu */ /* "] */
+    .|\n            { ECHO; } /* Wypisuj wszystko inne */
+}
+
+    /* Wewnątrz '''...''' (multi-line single) */
+<MLS_STRING>{
+    [']{3}          { ECHO; BEGIN(INITIAL); } /* Koniec stringu */
+    .|\n            { ECHO; } /* Wypisuj wszystko inne */
+}
+
+%%
+/* ===================================================================
+ * SEKCJA KODU UŻYTKOWNIKA (C)
+ * =================================================================== */
+
+extern FILE *yyin;
+
+int main(int argc, char **argv) {
+    
+    if (argc > 1) {
+        FILE *file = fopen(argv[1], "r");
+        if (!file) {
+            perror(argv[1]);
+            return 1;
+        }
+        yyin = file;
+    }
+
+    yylex();
+
+    if (yyin != stdin) {
+        fclose(yyin);
+    }
+    
+    return 0;
+}
