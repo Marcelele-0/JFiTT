@@ -1,6 +1,6 @@
-#line 1 "zadanie1.c"
+#line 1 "c_files/zadanie1.c"
 
-#line 3 "zadanie1.c"
+#line 3 "c_files/zadanie1.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -445,8 +445,8 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "zadanie1.l"
-#line 2 "zadanie1.l"
+#line 1 "flex/zadanie1.lx"
+#line 2 "flex/zadanie1.lx"
 /*
  * Plik Flex (zadanie1.l)
  *
@@ -468,9 +468,9 @@ long num_words = 0;
 /* Flaga pomocnicza */
 int content_on_line = 0;
 
-#line 471 "zadanie1.c"
+#line 471 "c_files/zadanie1.c"
 /* Opcje Flexa */
-#line 473 "zadanie1.c"
+#line 473 "c_files/zadanie1.c"
 
 #define INITIAL 0
 
@@ -690,10 +690,10 @@ YY_DECL
 		}
 
 	{
-#line 29 "zadanie1.l"
+#line 29 "flex/zadanie1.lx"
 
 
-#line 696 "zadanie1.c"
+#line 696 "c_files/zadanie1.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -753,14 +753,14 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 31 "zadanie1.l"
+#line 31 "flex/zadanie1.lx"
 { 
                         /* Reguła 1: Ignoruj wiodące białe znaki */ 
                     }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 36 "zadanie1.l"
+#line 36 "flex/zadanie1.lx"
 { 
                         /* Reguła 2: Zastąp wielokrotne białe znaki pojedynczą spacją */
                         printf(" "); 
@@ -768,7 +768,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 42 "zadanie1.l"
+#line 42 "flex/zadanie1.lx"
 {
                         /* Reguła 3: Dopasuj "słowo" */
                         printf("%s", yytext);
@@ -779,7 +779,7 @@ YY_RULE_SETUP
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 50 "zadanie1.l"
+#line 50 "flex/zadanie1.lx"
 {
                         /* Reguła 4: Białe znaki na końcu wiersza + nowa linia */
                         if (content_on_line) {
@@ -792,7 +792,7 @@ YY_RULE_SETUP
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 60 "zadanie1.l"
+#line 60 "flex/zadanie1.lx"
 {
                         /* Reguła 5: Sama nowa linia (jeśli wiersz nie był pusty) */
                         if (content_on_line) {
@@ -804,10 +804,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 69 "zadanie1.l"
+#line 69 "flex/zadanie1.lx"
 ECHO;
 	YY_BREAK
-#line 810 "zadanie1.c"
+#line 810 "c_files/zadanie1.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1815,7 +1815,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 69 "zadanie1.l"
+#line 69 "flex/zadanie1.lx"
 
 /* ----- SEKCJA KODU UŻYTKOWNIKA (C) ----- */
 

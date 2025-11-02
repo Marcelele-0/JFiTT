@@ -1,0 +1,142 @@
+===============================================
+RAPORT Z URUCHOMIENIA WSZYSTKICH ZADAŃ - LAB 2
+===============================================
+Data: Sun Nov  2 02:10:55 PM CET 2025
+Katalog projektu: /home/licho/.programming/UNI/JFiTT/lab_2
+
+###################################################
+# ZADANIE 1 - Czyszczenie białych znaków
+###################################################
+
+Kompilacja zadania 1...
+✓ Kompilacja sukcesu
+
+Uruchomienie zadania 1 na pliku test_files/plik_testowy.txt:
+--- WYJŚCIE ---
+To jest pierwszy wiersz.
+To jest drugi wiersz.
+Trzeci wiersz.
+--------------------
+Liczba linii: 3
+Liczba słów: 10
+--- KONIEC WYJŚCIA ---
+
+
+###################################################
+# ZADANIE 2 - Usuwanie komentarzy Python
+###################################################
+
+Kompilacja zadania 2...
+✓ Kompilacja sukcesu
+
+Uruchomienie zadania 2 na pliku test_files/test.py:
+--- WYJŚCIE ---
+print("Hello world") 
+
+
+
+def foo():
+    """To jest docstring, # nie komentarz."""
+    print("Tu jest # w stringu") 
+
+--- KONIEC WYJŚCIA ---
+
+
+###################################################
+# ZADANIE 3 - Usuwanie komentarzy C/C++
+###################################################
+
+Kompilacja zadania 3...
+✓ Kompilacja sukcesu
+
+--- WERSJA BEZ DOXYGENU (domyślnie) ---
+Uruchomienie na pliku test_files/test.cpp:
+--- WYJŚCIE ---
+
+int main() {
+    
+    int x = 5; 
+
+    
+    const char* s = "To nie jest // komentarz ani /* blok */";
+    
+    
+    
+    
+}
+
+--- KONIEC WYJŚCIA ---
+
+--- WERSJA Z DOXYGENIEM ---
+Uruchomienie na pliku test_files/test.cpp z flagą -d:
+--- WYJŚCIE ---
+/// Komentarz Doxygen (linia)
+int main() {
+    /** Komentarz Doxygen (blok) */
+    int x = 5; 
+
+    
+    const char* s = "To nie jest // komentarz ani /* blok */";
+    
+    
+    
+    //! Doxygen 2
+}
+
+--- KONIEC WYJŚCIA ---
+
+
+###################################################
+# ZADANIE 4 - Kalkulator RPN (Reverse Polish Notation)
+###################################################
+
+Kompilacja zadania 4...
+✓ Kompilacja sukcesu
+
+Uruchomienie zadania 4 z testami:
+
+Test 1: 2 3 + 4 *
+Oczekiwane: = 20
+Faktyczne:
+= 20
+
+Test 2: 1 2 3 4 + * -
+Oczekiwane: = -13
+Faktyczne:
+= -13
+
+Test 3: -1 2 -3 4 + * -
+Oczekiwane: = -3
+Faktyczne:
+= -3
+
+Test 4: 8 -7 6 -5 4 * -3 % / - +
+Oczekiwane: = 4
+Faktyczne:
+= 4
+
+Test 5: 2 3 2 ^ ^
+Oczekiwane: = 512
+Faktyczne:
+= 512
+
+Test 6: 2 3+*
+Oczekiwane: Błąd: za mała liczba argumentów
+Faktyczne:
+Błąd: za mała liczba argumentów
+
+Test 7: 2 3 4 +
+Oczekiwane: Błąd: za mała liczba operatorów
+Faktyczne:
+Błąd: za mała liczba operatorów
+
+Test 8: 2.4 3+
+Oczekiwane: Błąd: zły symbol "."
+Faktyczne:
+Błąd: zły symbol "."
+
+
+===============================================
+KONIEC RAPORTU
+===============================================
+Raport zapisany w: RAPORT.txt

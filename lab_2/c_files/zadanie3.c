@@ -1,6 +1,6 @@
-#line 1 "zadanie3.c"
+#line 1 "c_files/zadanie3.c"
 
-#line 3 "zadanie3.c"
+#line 3 "c_files/zadanie3.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -487,8 +487,8 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "zadanie3.lx"
-#line 2 "zadanie3.lx"
+#line 1 "flex/zadanie3.lx"
+#line 2 "flex/zadanie3.lx"
 /*
  * Plik Flex (zadanie3.l)
  * Zadanie: Usuń komentarze C/C++.
@@ -504,11 +504,11 @@ char *yytext;
  */
 int keep_doxygen = 0;
 
-#line 507 "zadanie3.c"
+#line 507 "c_files/zadanie3.c"
 /* Opcje Flexa */
 /* Definicje stanów */
 
-#line 511 "zadanie3.c"
+#line 511 "c_files/zadanie3.c"
 
 #define INITIAL 0
 #define STRING 1
@@ -731,14 +731,14 @@ YY_DECL
 		}
 
 	{
-#line 25 "zadanie3.lx"
+#line 25 "flex/zadanie3.lx"
 
-#line 27 "zadanie3.lx"
+#line 27 "flex/zadanie3.lx"
     /* * SEKCJA REGUŁ
      * Ten komentarz jest wcięty, więc jest bezpieczny.
      */
 
-#line 741 "zadanie3.c"
+#line 741 "c_files/zadanie3.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -797,167 +797,167 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 32 "zadanie3.lx"
+#line 32 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; BEGIN(DOXY_LINE_COMMENT); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 33 "zadanie3.lx"
+#line 33 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; BEGIN(DOXY_LINE_COMMENT); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 34 "zadanie3.lx"
+#line 34 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; BEGIN(DOXY_BLOCK_COMMENT); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 35 "zadanie3.lx"
+#line 35 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; BEGIN(DOXY_BLOCK_COMMENT); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 36 "zadanie3.lx"
+#line 36 "flex/zadanie3.lx"
 { BEGIN(C_LINE_COMMENT); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 37 "zadanie3.lx"
+#line 37 "flex/zadanie3.lx"
 { BEGIN(C_BLOCK_COMMENT); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 38 "zadanie3.lx"
-{ ECHO; BEGIN(STRING); }
+#line 38 "flex/zadanie3.lx"
+{ ECHO; BEGIN(STRING); } /* " */
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 39 "zadanie3.lx"
+#line 39 "flex/zadanie3.lx"
 { ECHO; BEGIN(CHAR); }
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 40 "zadanie3.lx"
+#line 40 "flex/zadanie3.lx"
 { ECHO; }
 	YY_BREAK
 
 
 case 10:
 YY_RULE_SETUP
-#line 44 "zadanie3.lx"
+#line 44 "flex/zadanie3.lx"
 { ECHO; BEGIN(INITIAL); } 
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 45 "zadanie3.lx"
+#line 45 "flex/zadanie3.lx"
 { ECHO; } 
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 46 "zadanie3.lx"
-{ ECHO; } 
+#line 46 "flex/zadanie3.lx"
+{ ECHO; }  /* " */
 	YY_BREAK
 case 13:
 /* rule 13 can match eol */
 YY_RULE_SETUP
-#line 47 "zadanie3.lx"
+#line 47 "flex/zadanie3.lx"
 { ECHO; BEGIN(INITIAL); } 
 	YY_BREAK
 
 
 case 14:
 YY_RULE_SETUP
-#line 51 "zadanie3.lx"
+#line 51 "flex/zadanie3.lx"
 { ECHO; BEGIN(INITIAL); } 
 	YY_BREAK
 case 15:
 /* rule 15 can match eol */
 YY_RULE_SETUP
-#line 52 "zadanie3.lx"
+#line 52 "flex/zadanie3.lx"
 { ECHO; } 
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 53 "zadanie3.lx"
+#line 53 "flex/zadanie3.lx"
 { ECHO; } 
 	YY_BREAK
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 54 "zadanie3.lx"
+#line 54 "flex/zadanie3.lx"
 { ECHO; BEGIN(INITIAL); } 
 	YY_BREAK
 
 
 case 18:
 YY_RULE_SETUP
-#line 58 "zadanie3.lx"
+#line 58 "flex/zadanie3.lx"
 { /* Ignoruj */ }
 	YY_BREAK
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 59 "zadanie3.lx"
+#line 59 "flex/zadanie3.lx"
 { ECHO; BEGIN(INITIAL); }
 	YY_BREAK
 
 
 case 20:
 YY_RULE_SETUP
-#line 63 "zadanie3.lx"
+#line 63 "flex/zadanie3.lx"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 64 "zadanie3.lx"
+#line 64 "flex/zadanie3.lx"
 { /* Ignoruj */ }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 65 "zadanie3.lx"
+#line 65 "flex/zadanie3.lx"
 { /* Ignoruj */ }
 	YY_BREAK
 
 
 case 23:
 YY_RULE_SETUP
-#line 69 "zadanie3.lx"
+#line 69 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; }
 	YY_BREAK
 case 24:
 /* rule 24 can match eol */
 YY_RULE_SETUP
-#line 70 "zadanie3.lx"
+#line 70 "flex/zadanie3.lx"
 { ECHO; BEGIN(INITIAL); }
 	YY_BREAK
 
 
 case 25:
 YY_RULE_SETUP
-#line 74 "zadanie3.lx"
+#line 74 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; BEGIN(INITIAL); }
 	YY_BREAK
 case 26:
 /* rule 26 can match eol */
 YY_RULE_SETUP
-#line 75 "zadanie3.lx"
+#line 75 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 76 "zadanie3.lx"
+#line 76 "flex/zadanie3.lx"
 { if (keep_doxygen) ECHO; }
 	YY_BREAK
 
 case 28:
 YY_RULE_SETUP
-#line 79 "zadanie3.lx"
+#line 79 "flex/zadanie3.lx"
 ECHO;
 	YY_BREAK
-#line 960 "zadanie3.c"
+#line 960 "c_files/zadanie3.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(STRING):
 case YY_STATE_EOF(CHAR):
@@ -1968,7 +1968,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 79 "zadanie3.lx"
+#line 79 "flex/zadanie3.lx"
 
 /* ===================================================================
  * SEKCJA KODU UŻYTOWNIKA (C)

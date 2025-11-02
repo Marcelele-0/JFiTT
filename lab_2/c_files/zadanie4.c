@@ -1,6 +1,6 @@
-#line 1 "zadanie4.c"
+#line 1 "c_files/zadanie4.c"
 
-#line 3 "zadanie4.c"
+#line 3 "c_files/zadanie4.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -355,8 +355,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 12
-#define YY_END_OF_BUFFER 13
+#define YY_NUM_RULES 13
+#define YY_END_OF_BUFFER 14
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -364,10 +364,11 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static const flex_int16_t yy_accept[18] =
+static const flex_int16_t yy_accept[22] =
     {   0,
-        0,    0,   13,   11,    1,   10,    6,    4,    2,    3,
-        5,    8,    7,    1,    9,    8,    0
+        0,    0,   14,   12,    1,   11,    9,    7,    5,    6,
+        8,    4,   10,    5,    6,    1,    0,    4,    2,    3,
+        0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -404,33 +405,37 @@ static const YY_CHAR yy_ec[256] =
 
 static const YY_CHAR yy_meta[11] =
     {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1
+        1,    2,    1,    1,    1,    2,    2,    1,    1,    1
     } ;
 
-static const flex_int16_t yy_base[18] =
+static const flex_int16_t yy_base[23] =
     {   0,
-        0,    0,   18,   19,   15,   19,   19,   19,    7,    6,
-       19,    5,   19,   11,    3,    2,   19
+        0,    5,   23,   24,   20,   24,   24,   24,   24,   24,
+       24,   12,   24,   11,   10,   16,    8,    7,    6,    5,
+       24,   11
     } ;
 
-static const flex_int16_t yy_def[18] =
+static const flex_int16_t yy_def[23] =
     {   0,
-       17,    1,   17,   17,   17,   17,   17,   17,   17,   17,
-       17,   17,   17,   17,   17,   17,    0
+       21,    1,   21,   21,   22,   21,   21,   21,   21,   21,
+       21,   21,   21,   21,   21,   22,   21,   21,   21,   21,
+        0,   21
     } ;
 
-static const flex_int16_t yy_nxt[30] =
+static const flex_int16_t yy_nxt[35] =
     {   0,
         4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
-       16,   15,   14,   16,   15,   15,   14,   17,    3,   17,
-       17,   17,   17,   17,   17,   17,   17,   17,   17
+       14,   15,   17,   20,   19,   18,   20,   16,   19,   19,
+       18,   16,   21,    3,   21,   21,   21,   21,   21,   21,
+       21,   21,   21,   21
     } ;
 
-static const flex_int16_t yy_chk[30] =
+static const flex_int16_t yy_chk[35] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-       16,   15,   14,   12,   10,    9,    5,    3,   17,   17,
-       17,   17,   17,   17,   17,   17,   17,   17,   17
+        2,    2,   22,   20,   19,   18,   17,   16,   15,   14,
+       12,    5,    3,   21,   21,   21,   21,   21,   21,   21,
+       21,   21,   21,   21
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -447,23 +452,32 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "zadanie4.lx"
-#line 2 "zadanie4.lx"
-/* ... (cała sekcja C bez zmian, z flagą calculated_something) ... */
+#line 1 "flex/zadanie4.lx"
+#line 2 "flex/zadanie4.lx"
+/*
+ * Plik Flex (zadanie4.l)
+ *
+ * Zadanie: Kalkulator RPN (postfix) dla liczb całkowitych.
+ * Wersja 5 (Ostateczna) - Poprawnie obsługuje liczby ze znakiem
+ * i operatory bez spacji, rozwiązując niejednoznaczność.
+ */
 
 #include <stdio.h>
-#include <stdlib.h> 
-#include <string.h> 
-#include <math.h>   
+#include <stdlib.h> // dla atol()
+#include <string.h> // dla strcpy(), sprintf()
+#include <math.h>   // dla pow()
 
+/* --- Implementacja Stosu --- */
 #define MAX_STACK 256
 long stack[MAX_STACK];
 int stack_ptr = 0;
 
+/* --- Flagi błędów dla bieżącej linii --- */
 int error_on_line = 0;
 char error_msg[100];
 int calculated_something = 0; 
 
+/* Funkcja do resetowania stanu dla nowej linii */
 void reset_line_state() {
     stack_ptr = 0;
     error_on_line = 0;
@@ -471,8 +485,10 @@ void reset_line_state() {
     calculated_something = 0; 
 }
 
+/* Funkcja pomocnicza: push na stos */
 void push(long val) {
     if (error_on_line) return;
+
     if (stack_ptr >= MAX_STACK) {
         error_on_line = 1;
         strcpy(error_msg, "Błąd: przepełnienie stosu (zbyt wiele liczb)");
@@ -481,8 +497,10 @@ void push(long val) {
     }
 }
 
+/* Funkcja pomocnicza: pop ze stosu */
 long pop() {
     if (error_on_line) return 0;
+
     if (stack_ptr <= 0) {
         error_on_line = 1;
         strcpy(error_msg, "Błąd: za mała liczba argumentów");
@@ -492,9 +510,9 @@ long pop() {
     }
 }
 
-#line 495 "zadanie4.c"
+#line 513 "c_files/zadanie4.c"
 /* Opcje Flexa */
-#line 497 "zadanie4.c"
+#line 515 "c_files/zadanie4.c"
 
 #define INITIAL 0
 
@@ -674,6 +692,9 @@ extern int yylex (void);
 #endif
 
 #define YY_RULE_SETUP \
+	if ( yyleng > 0 ) \
+		YY_CURRENT_BUFFER_LVALUE->yy_at_bol = \
+				(yytext[yyleng - 1] == '\n'); \
 	YY_USER_ACTION
 
 /** The main scanner function which does all the work.
@@ -711,15 +732,17 @@ YY_DECL
 		}
 
 	{
-#line 50 "zadanie4.lx"
+#line 63 "flex/zadanie4.lx"
 
-#line 52 "zadanie4.lx"
+#line 65 "flex/zadanie4.lx"
     /* * SEKCJA REGUŁ
-     * POPRAWKA: Zmieniamy kolejność i treść reguł,
-     * aby operatory miały pierwszeństwo przed "chciwą" regułą liczby.
+     * Rozwiązujemy niejednoznaczność "znak liczby" vs "operator"
+     * poprzez zdefiniowanie liczb ze znakiem jako osobnych tokenów,
+     * które MUSZĄ być na początku linii lub po spacji.
      */
 
-#line 722 "zadanie4.c"
+    /* 1. Ignoruj puste spacje */
+#line 745 "c_files/zadanie4.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -734,6 +757,7 @@ YY_DECL
 		yy_bp = yy_cp;
 
 		yy_current_state = (yy_start);
+		yy_current_state += YY_AT_BOL();
 yy_match:
 		do
 			{
@@ -746,13 +770,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 18 )
+				if ( yy_current_state >= 22 )
 					yy_c = yy_meta[yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 19 );
+		while ( yy_base[yy_current_state] != 24 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -778,13 +802,42 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 57 "zadanie4.lx"
-{ /* 1. Ignoruj białe znaki */ }
+#line 72 "flex/zadanie4.lx"
+{ /* Ignoruj */ }
 	YY_BREAK
-/* 2. Operatory (MUSZĄ BYĆ PRZED LICZBAMI) */
+/* 2. Reguły dla liczb (precyzyjne) */
+/* Liczba ze znakiem NA POCZĄTKU linii (np. "-1") */
 case 2:
 YY_RULE_SETUP
-#line 60 "zadanie4.lx"
+#line 78 "flex/zadanie4.lx"
+{
+                        push(atol(yytext));
+                    }
+	YY_BREAK
+/* Liczba ze znakiem POPRZEDZONA SPACJĄ (np. " 8 -7") */
+/* atol() sam zignoruje wiodącą spację w yytext */
+case 3:
+YY_RULE_SETUP
+#line 84 "flex/zadanie4.lx"
+{
+                        push(atol(yytext));
+                    }
+	YY_BREAK
+/* Zwykła liczba bez znaku (np. "2", "3", "4") */
+case 4:
+YY_RULE_SETUP
+#line 89 "flex/zadanie4.lx"
+{
+                        push(atol(yytext));
+                    }
+	YY_BREAK
+/* 3. Reguły dla operatorów.
+     * Ponieważ nie pasują już do "chciwych" reguł liczb,
+     * zostaną poprawnie rozpoznane (np. "+" w "3+4").
+     */
+case 5:
+YY_RULE_SETUP
+#line 97 "flex/zadanie4.lx"
 {
                         if (error_on_line) break;
                         long op2 = pop(); if (error_on_line) break;
@@ -793,9 +846,9 @@ YY_RULE_SETUP
                         calculated_something = 1; 
                     }
 	YY_BREAK
-case 3:
+case 6:
 YY_RULE_SETUP
-#line 67 "zadanie4.lx"
+#line 104 "flex/zadanie4.lx"
 {
                         if (error_on_line) break;
                         long op2 = pop(); if (error_on_line) break;
@@ -804,9 +857,9 @@ YY_RULE_SETUP
                         calculated_something = 1; 
                     }
 	YY_BREAK
-case 4:
+case 7:
 YY_RULE_SETUP
-#line 74 "zadanie4.lx"
+#line 111 "flex/zadanie4.lx"
 {
                         if (error_on_line) break;
                         long op2 = pop(); if (error_on_line) break;
@@ -815,9 +868,9 @@ YY_RULE_SETUP
                         calculated_something = 1; 
                     }
 	YY_BREAK
-case 5:
+case 8:
 YY_RULE_SETUP
-#line 81 "zadanie4.lx"
+#line 118 "flex/zadanie4.lx"
 {
                         if (error_on_line) break;
                         long op2 = pop(); if (error_on_line) break;
@@ -831,9 +884,9 @@ YY_RULE_SETUP
                         calculated_something = 1; 
                     }
 	YY_BREAK
-case 6:
+case 9:
 YY_RULE_SETUP
-#line 93 "zadanie4.lx"
+#line 130 "flex/zadanie4.lx"
 {
                         if (error_on_line) break;
                         long op2 = pop(); if (error_on_line) break;
@@ -847,9 +900,9 @@ YY_RULE_SETUP
                         calculated_something = 1; 
                     }
 	YY_BREAK
-case 7:
+case 10:
 YY_RULE_SETUP
-#line 105 "zadanie4.lx"
+#line 142 "flex/zadanie4.lx"
 {
                         if (error_on_line) break;
                         long op2_exponent = pop(); if (error_on_line) break;
@@ -863,30 +916,11 @@ YY_RULE_SETUP
                         calculated_something = 1; 
                     }
 	YY_BREAK
-/* 3. Liczby */
-case 8:
+/* 4. Koniec linii (czas na obliczenia) */
+case 11:
+/* rule 11 can match eol */
 YY_RULE_SETUP
-#line 119 "zadanie4.lx"
-{
-                        /* Zwykła liczba dodatnia */
-                        push(atol(yytext));
-                    }
-	YY_BREAK
-case 9:
-YY_RULE_SETUP
-#line 123 "zadanie4.lx"
-{
-                        /* Liczba ze znakiem (np. -1, +5) */
-                        /* Ta reguła jest oddzielna, ale nadal chciwa. */
-                        /* To nic nie da. */
-                        push(atol(yytext));
-                    }
-	YY_BREAK
-/* ... \n i . bez zmian ... */
-case 10:
-/* rule 10 can match eol */
-YY_RULE_SETUP
-#line 131 "zadanie4.lx"
+#line 156 "flex/zadanie4.lx"
 {
                         if (error_on_line) {
                             printf("%s\n", error_msg);
@@ -899,26 +933,27 @@ YY_RULE_SETUP
                         } else if (stack_ptr > 1) {
                             printf("Błąd: za mała liczba operatorów\n");
                         } else {
-                            ECHO;
+                            ECHO; /* Pusta linia */
                         }
                         reset_line_state();
                     }
 	YY_BREAK
-case 11:
+/* 5. Zły symbol (wszystko inne) */
+case 12:
 YY_RULE_SETUP
-#line 148 "zadanie4.lx"
+#line 174 "flex/zadanie4.lx"
 {
                         if (error_on_line) break; 
                         error_on_line = 1;
                         sprintf(error_msg, "Błąd: zły symbol \"%s\"", yytext);
                     }
 	YY_BREAK
-case 12:
+case 13:
 YY_RULE_SETUP
-#line 153 "zadanie4.lx"
+#line 179 "flex/zadanie4.lx"
 ECHO;
 	YY_BREAK
-#line 921 "zadanie4.c"
+#line 956 "c_files/zadanie4.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1203,6 +1238,7 @@ static int yy_get_next_buffer (void)
 	char *yy_cp;
     
 	yy_current_state = (yy_start);
+	yy_current_state += YY_AT_BOL();
 
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
@@ -1215,7 +1251,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 18 )
+			if ( yy_current_state >= 22 )
 				yy_c = yy_meta[yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -1243,11 +1279,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 18 )
+		if ( yy_current_state >= 22 )
 			yy_c = yy_meta[yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
-	yy_is_jam = (yy_current_state == 17);
+	yy_is_jam = (yy_current_state == 21);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1362,6 +1398,8 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
+
+	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = (c == '\n');
 
 	return c;
 }
@@ -1923,7 +1961,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 153 "zadanie4.lx"
+#line 179 "flex/zadanie4.lx"
 
 
 /* --- SEKCJA KODU UŻYTKOWNIKA (C) --- */

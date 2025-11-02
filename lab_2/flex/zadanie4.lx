@@ -1,19 +1,28 @@
 %{
-/* ... (cała sekcja C bez zmian, z flagą calculated_something) ... */
+/*
+ * Plik Flex (zadanie4.l)
+ *
+ * Zadanie: Kalkulator RPN (postfix) dla liczb całkowitych.
+ * Wersja 5 (Ostateczna) - Poprawnie obsługuje liczby ze znakiem
+ * i operatory bez spacji, rozwiązując niejednoznaczność.
+ */
 
 #include <stdio.h>
-#include <stdlib.h> 
-#include <string.h> 
-#include <math.h>   
+#include <stdlib.h> // dla atol()
+#include <string.h> // dla strcpy(), sprintf()
+#include <math.h>   // dla pow()
 
+/* --- Implementacja Stosu --- */
 #define MAX_STACK 256
 long stack[MAX_STACK];
 int stack_ptr = 0;
 
+/* --- Flagi błędów dla bieżącej linii --- */
 int error_on_line = 0;
 char error_msg[100];
 int calculated_something = 0; 
 
+/* Funkcja do resetowania stanu dla nowej linii */
 void reset_line_state() {
     stack_ptr = 0;
     error_on_line = 0;
@@ -21,8 +30,10 @@ void reset_line_state() {
     calculated_something = 0; 
 }
 
+/* Funkcja pomocnicza: push na stos */
 void push(long val) {
     if (error_on_line) return;
+
     if (stack_ptr >= MAX_STACK) {
         error_on_line = 1;
         strcpy(error_msg, "Błąd: przepełnienie stosu (zbyt wiele liczb)");
@@ -31,8 +42,10 @@ void push(long val) {
     }
 }
 
+/* Funkcja pomocnicza: pop ze stosu */
 long pop() {
     if (error_on_line) return 0;
+
     if (stack_ptr <= 0) {
         error_on_line = 1;
         strcpy(error_msg, "Błąd: za mała liczba argumentów");
@@ -49,13 +62,37 @@ long pop() {
 
 %%
     /* * SEKCJA REGUŁ
-     * POPRAWKA: Zmieniamy kolejność i treść reguł,
-     * aby operatory miały pierwszeństwo przed "chciwą" regułą liczby.
+     * Rozwiązujemy niejednoznaczność "znak liczby" vs "operator"
+     * poprzez zdefiniowanie liczb ze znakiem jako osobnych tokenów,
+     * które MUSZĄ być na początku linii lub po spacji.
      */
 
-[ \t]+              { /* 1. Ignoruj białe znaki */ }
+    /* 1. Ignoruj puste spacje */
+[ \t]+              { /* Ignoruj */ }
 
-    /* 2. Operatory (MUSZĄ BYĆ PRZED LICZBAMI) */
+
+    /* 2. Reguły dla liczb (precyzyjne) */
+    
+    /* Liczba ze znakiem NA POCZĄTKU linii (np. "-1") */
+^[-+][0-9]+         {
+                        push(atol(yytext));
+                    }
+    
+    /* Liczba ze znakiem POPRZEDZONA SPACJĄ (np. " 8 -7") */
+    /* atol() sam zignoruje wiodącą spację w yytext */
+[ \t]+[-+][0-9]+    {
+                        push(atol(yytext));
+                    }
+
+    /* Zwykła liczba bez znaku (np. "2", "3", "4") */
+[0-9]+              {
+                        push(atol(yytext));
+                    }
+
+    /* 3. Reguły dla operatorów.
+     * Ponieważ nie pasują już do "chciwych" reguł liczb,
+     * zostaną poprawnie rozpoznane (np. "+" w "3+4").
+     */
 "+"                 {
                         if (error_on_line) break;
                         long op2 = pop(); if (error_on_line) break;
@@ -113,20 +150,8 @@ long pop() {
                         push((long)pow((double)op1_base, (double)op2_exponent));
                         calculated_something = 1; 
                     }
-                    
-    /* 3. Liczby */
-[0-9]+              {
-                        /* Zwykła liczba dodatnia */
-                        push(atol(yytext));
-                    }
-[-+][0-9]+          {
-                        /* Liczba ze znakiem (np. -1, +5) */
-                        /* Ta reguła jest oddzielna, ale nadal chciwa. */
-                        /* To nic nie da. */
-                        push(atol(yytext));
-                    }
-    
-    /* ... \n i . bez zmian ... */
+
+    /* 4. Koniec linii (czas na obliczenia) */
 \n                  {
                         if (error_on_line) {
                             printf("%s\n", error_msg);
@@ -139,11 +164,12 @@ long pop() {
                         } else if (stack_ptr > 1) {
                             printf("Błąd: za mała liczba operatorów\n");
                         } else {
-                            ECHO;
+                            ECHO; /* Pusta linia */
                         }
                         reset_line_state();
                     }
 
+    /* 5. Zły symbol (wszystko inne) */
 .                   {
                         if (error_on_line) break; 
                         error_on_line = 1;

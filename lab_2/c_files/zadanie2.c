@@ -1,6 +1,6 @@
-#line 1 "zadanie2.c"
+#line 1 "c_files/zadanie2.c"
 
-#line 3 "zadanie2.c"
+#line 3 "c_files/zadanie2.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -470,8 +470,8 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "zadanie2.lx"
-#line 2 "zadanie2.lx"
+#line 1 "flex/zadanie2.lx"
+#line 2 "flex/zadanie2.lx"
 /*
  * Plik Flex (zadanie2.l)
  *
@@ -480,12 +480,12 @@ char *yytext;
 
 #include <stdio.h>
 
-#line 483 "zadanie2.c"
+#line 483 "c_files/zadanie2.c"
 /* Opcje Flexa */
 /* Definicje stanów */
 
 /* Definicja prefiksów stringów */
-#line 488 "zadanie2.c"
+#line 488 "c_files/zadanie2.c"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -707,15 +707,15 @@ YY_DECL
 		}
 
 	{
-#line 25 "zadanie2.lx"
+#line 25 "flex/zadanie2.lx"
 
-#line 27 "zadanie2.lx"
+#line 27 "flex/zadanie2.lx"
     /* * SEKCJA REGUŁ
      * Ten komentarz jest poprawnie wcięty.
      */
 
     /* --- Stan INITIAL (domyślny, poza stringiem i komentarzem) --- */
-#line 718 "zadanie2.c"
+#line 718 "c_files/zadanie2.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -775,33 +775,33 @@ do_action:	/* This label is used only to access EOF actions. */
 /* Poprawki dla lintera VSCode: */
 case 1:
 YY_RULE_SETUP
-#line 34 "zadanie2.lx"
+#line 34 "flex/zadanie2.lx"
 { BEGIN(COMMENT); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 36 "zadanie2.lx"
+#line 36 "flex/zadanie2.lx"
 { ECHO; BEGIN(MLD_STRING); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 37 "zadanie2.lx"
+#line 37 "flex/zadanie2.lx"
 { ECHO; BEGIN(MLS_STRING); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 38 "zadanie2.lx"
+#line 38 "flex/zadanie2.lx"
 { ECHO; BEGIN(DQ_STRING); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 39 "zadanie2.lx"
+#line 39 "flex/zadanie2.lx"
 { ECHO; BEGIN(SQ_STRING); }
 	YY_BREAK
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 41 "zadanie2.lx"
+#line 41 "flex/zadanie2.lx"
 { ECHO; } 
 	YY_BREAK
 
@@ -809,13 +809,13 @@ YY_RULE_SETUP
 
 case 7:
 YY_RULE_SETUP
-#line 47 "zadanie2.lx"
+#line 47 "flex/zadanie2.lx"
 { /* Ignoruj treść komentarza */ }
 	YY_BREAK
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 48 "zadanie2.lx"
+#line 48 "flex/zadanie2.lx"
 { ECHO; BEGIN(INITIAL); }
 	YY_BREAK
 
@@ -824,23 +824,23 @@ YY_RULE_SETUP
 
 case 9:
 YY_RULE_SETUP
-#line 56 "zadanie2.lx"
+#line 56 "flex/zadanie2.lx"
 { ECHO; BEGIN(INITIAL); } /* Koniec stringu */ 
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 57 "zadanie2.lx"
+#line 57 "flex/zadanie2.lx"
 { ECHO; } /* Znak escape */  
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 58 "zadanie2.lx"
+#line 58 "flex/zadanie2.lx"
 { ECHO; } /* Znaki w stringu (poprawka dla lintera) */
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 59 "zadanie2.lx"
+#line 59 "flex/zadanie2.lx"
 { ECHO; } /* Błąd składni, ale wypisujemy */
 	YY_BREAK
 
@@ -848,23 +848,23 @@ YY_RULE_SETUP
 
 case 13:
 YY_RULE_SETUP
-#line 64 "zadanie2.lx"
+#line 64 "flex/zadanie2.lx"
 { ECHO; BEGIN(INITIAL); } /* Koniec stringu */
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 65 "zadanie2.lx"
+#line 65 "flex/zadanie2.lx"
 { ECHO; } /* Znak escape */
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 66 "zadanie2.lx"
+#line 66 "flex/zadanie2.lx"
 { ECHO; } /* Znaki w stringu (poprawka dla lintera) */
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 67 "zadanie2.lx"
+#line 67 "flex/zadanie2.lx"
 { ECHO; } /* Błąd składni, ale wypisujemy */
 	YY_BREAK
 
@@ -872,13 +872,13 @@ YY_RULE_SETUP
 
 case 17:
 YY_RULE_SETUP
-#line 72 "zadanie2.lx"
+#line 72 "flex/zadanie2.lx"
 { ECHO; BEGIN(INITIAL); } /* Koniec stringu */ /* "] */
 	YY_BREAK
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 73 "zadanie2.lx"
+#line 73 "flex/zadanie2.lx"
 { ECHO; } /* Wypisuj wszystko inne */
 	YY_BREAK
 
@@ -886,22 +886,22 @@ YY_RULE_SETUP
 
 case 19:
 YY_RULE_SETUP
-#line 78 "zadanie2.lx"
+#line 78 "flex/zadanie2.lx"
 { ECHO; BEGIN(INITIAL); } /* Koniec stringu */
 	YY_BREAK
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 79 "zadanie2.lx"
+#line 79 "flex/zadanie2.lx"
 { ECHO; } /* Wypisuj wszystko inne */
 	YY_BREAK
 
 case 21:
 YY_RULE_SETUP
-#line 82 "zadanie2.lx"
+#line 82 "flex/zadanie2.lx"
 ECHO;
 	YY_BREAK
-#line 904 "zadanie2.c"
+#line 904 "c_files/zadanie2.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 case YY_STATE_EOF(SQ_STRING):
@@ -1911,7 +1911,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 82 "zadanie2.lx"
+#line 82 "flex/zadanie2.lx"
 
 /* ===================================================================
  * SEKCJA KODU UŻYTKOWNIKA (C)
