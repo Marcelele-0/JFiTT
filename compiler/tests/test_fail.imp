@@ -1,0 +1,5 @@
+PROGRAM IS
+    x
+IN
+    y := 10;
+END

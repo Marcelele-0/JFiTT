@@ -1,0 +1,9 @@
+[project]
+name = "lab-3-py"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "ply>=3.11",
+]
