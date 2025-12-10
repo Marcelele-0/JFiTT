@@ -1,14 +1,22 @@
 JUMP MAIN
 PROC_factorial:
-SUB r_a r_a
+RST r_a
+SWP r_b
+LOAD 20
+ADD r_b
+STORE 2
+RST r_a
 SHL r_a
 INC r_a
-STORE 20
+SWP r_b
+LOAD 2
+SWP r_b
+RSTORE r_b
 LOAD 20
 SWP r_b
 RLOAD r_b
 STORE 22
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 STORE 23
@@ -24,6 +32,11 @@ STORE 1
 LOAD 0
 SUB 1
 JPOS FOR_END_2
+LOAD 23
+SWP r_b
+LOAD 20
+ADD r_b
+STORE 2
 LOAD 22
 STORE 0
 LOAD 23
@@ -32,23 +45,27 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
-SWP r_d
+RST r_d
 MULT_START_3:
 SWP r_b
 JZERO MULT_END_4
 SWP r_b
-SWP r_b
+RST r_a
+ADD r_b
 SWP r_e
-SWP r_b
-SUB r_a r_a
+RST r_a
 ADD r_b
 SHR r_a
 SHL r_a
 STORE 2
-SUB r_a r_a
+RST r_a
 ADD r_b
-SUB 2
+SWP r_b
+LOAD 2
+SWP r_f
+RST r_a
+ADD r_b
+SUB r_f
 JZERO MULT_SKIP_ADD_5
 SWP r_d
 ADD r_c
@@ -63,10 +80,14 @@ SWP r_b
 JUMP MULT_START_3
 MULT_END_4:
 SWP r_d
+SWP r_b
+LOAD 2
+SWP r_b
+RSTORE r_b
 LOAD 23
-STORE 0
+SWP r_b
 LOAD 20
-ADD 0
+ADD r_b
 SWP r_b
 RLOAD r_b
 STORE 22
@@ -77,7 +98,7 @@ JUMP FOR_START_1
 FOR_END_2:
 RTRN
 PROC_bc:
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -88,7 +109,7 @@ INC r_a
 SHL r_a
 INC r_a
 STORE 0
-SUB r_a r_a
+RST r_a
 STORE 1
 LOAD 0
 SUB 1
@@ -99,22 +120,21 @@ CALL PROC_factorial
 LOAD 24
 SWP r_b
 RLOAD r_b
-STORE 0
+SWP r_g
 LOAD 25
 SWP r_b
 RLOAD r_b
-STORE 1
-LOAD 0
-SUB 1
+SWP r_g
+SUB r_g
 STORE 128
 LOAD 24
 STORE 0
-SUB r_a r_a
-STORE 1
+RST r_a
+SWP r_b
 LOAD 0
-SUB 1
-STORE 0
-SUB r_a r_a
+SUB r_b
+SWP r_b
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -124,18 +144,18 @@ SHL r_a
 INC r_a
 SHL r_a
 INC r_a
-ADD 0
+ADD r_b
 SWP r_b
 RLOAD r_b
 STORE 0
 LOAD 25
 STORE 0
-SUB r_a r_a
-STORE 1
+RST r_a
+SWP r_b
 LOAD 0
-SUB 1
-STORE 0
-SUB r_a r_a
+SUB r_b
+SWP r_b
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -145,7 +165,7 @@ SHL r_a
 INC r_a
 SHL r_a
 INC r_a
-ADD 0
+ADD r_b
 SWP r_b
 RLOAD r_b
 STORE 1
@@ -153,68 +173,67 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_b
 JZERO DIV_ZERO_6
-SUB r_a r_a
-SWP r_d
-SUB r_a r_a
+RST r_d
+RST r_a
 INC r_a
 SWP r_f
-SUB r_a r_a
+RST r_a
 ADD r_b
 SWP r_e
 DIV_ALIGN_7:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SUB r_c
 JPOS DIV_ALIGN_END_8
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHL r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHL r_a
 SWP r_f
 JUMP DIV_ALIGN_7
 DIV_ALIGN_END_8:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
 DIV_LOOP_9:
-SUB r_a r_a
+RST r_a
 ADD r_f
 JZERO DIV_END_10
-SUB r_a r_a
+RST r_a
 ADD r_e
 SUB r_c
 JPOS DIV_SKIP_11
-SUB r_a r_a
+RST r_a
 ADD r_c
 SUB r_e
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_d
 ADD r_f
 SWP r_d
 DIV_SKIP_11:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
 JUMP DIV_LOOP_9
 DIV_END_10:
-SUB r_a r_a
+RST r_a
 ADD r_d
 DIV_ZERO_6:
 STORE 26
@@ -224,12 +243,12 @@ RLOAD r_b
 STORE 0
 LOAD 128
 STORE 0
-SUB r_a r_a
-STORE 1
+RST r_a
+SWP r_b
 LOAD 0
-SUB 1
-STORE 0
-SUB r_a r_a
+SUB r_b
+SWP r_b
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -239,7 +258,7 @@ SHL r_a
 INC r_a
 SHL r_a
 INC r_a
-ADD 0
+ADD r_b
 SWP r_b
 RLOAD r_b
 STORE 1
@@ -247,68 +266,67 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_b
 JZERO DIV_ZERO_12
-SUB r_a r_a
-SWP r_d
-SUB r_a r_a
+RST r_d
+RST r_a
 INC r_a
 SWP r_f
-SUB r_a r_a
+RST r_a
 ADD r_b
 SWP r_e
 DIV_ALIGN_13:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SUB r_c
 JPOS DIV_ALIGN_END_14
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHL r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHL r_a
 SWP r_f
 JUMP DIV_ALIGN_13
 DIV_ALIGN_END_14:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
 DIV_LOOP_15:
-SUB r_a r_a
+RST r_a
 ADD r_f
 JZERO DIV_END_16
-SUB r_a r_a
+RST r_a
 ADD r_e
 SUB r_c
 JPOS DIV_SKIP_17
-SUB r_a r_a
+RST r_a
 ADD r_c
 SUB r_e
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_d
 ADD r_f
 SWP r_d
 DIV_SKIP_17:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
 JUMP DIV_LOOP_15
 DIV_END_16:
-SUB r_a r_a
+RST r_a
 ADD r_d
 DIV_ZERO_12:
 STORE 26
@@ -316,7 +334,7 @@ RTRN
 MAIN:
 READ 129
 READ 130
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -328,7 +346,7 @@ SHL r_a
 SHL r_a
 INC r_a
 STORE 24
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -340,7 +358,7 @@ SHL r_a
 INC r_a
 SHL r_a
 STORE 25
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a

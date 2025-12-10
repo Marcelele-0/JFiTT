@@ -3,25 +3,28 @@ PROC_pa:
 LOAD 20
 SWP r_b
 RLOAD r_b
-STORE 0
+SWP r_g
 LOAD 21
 SWP r_b
 RLOAD r_b
-STORE 1
-LOAD 0
-ADD 1
-STORE 20
+ADD r_g
+SWP r_b
+LOAD 20
+SWP r_b
+RSTORE r_b
 LOAD 20
 SWP r_b
 RLOAD r_b
-STORE 0
+SWP r_g
 LOAD 21
 SWP r_b
 RLOAD r_b
-STORE 1
-LOAD 0
-SUB 1
-STORE 21
+SWP r_g
+SUB r_g
+SWP r_b
+LOAD 21
+SWP r_b
+RSTORE r_b
 RTRN
 PROC_pb:
 LOAD 22
@@ -77,7 +80,7 @@ RTRN
 MAIN:
 READ 28
 READ 29
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -87,7 +90,7 @@ INC r_a
 SHL r_a
 SHL r_a
 STORE 26
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a

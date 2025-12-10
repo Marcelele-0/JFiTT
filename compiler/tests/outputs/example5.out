@@ -1,6 +1,6 @@
 JUMP MAIN
 PROC_power:
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 STORE 23
@@ -20,182 +20,123 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_b
 JZERO MOD_ZERO_1
-SUB r_a r_a
-SWP r_d
-SUB r_a r_a
+RST r_d
+RST r_a
 INC r_a
 SWP r_f
-SUB r_a r_a
+RST r_a
 ADD r_b
 SWP r_e
 MOD_ALIGN_2:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SUB r_c
 JPOS MOD_ALIGN_END_3
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHL r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHL r_a
 SWP r_f
 JUMP MOD_ALIGN_2
 MOD_ALIGN_END_3:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
 MOD_LOOP_4:
-SUB r_a r_a
+RST r_a
 ADD r_f
 JZERO MOD_END_5
-SUB r_a r_a
+RST r_a
 ADD r_e
 SUB r_c
 JPOS MOD_SKIP_6
-SUB r_a r_a
+RST r_a
 ADD r_c
 SUB r_e
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_d
 ADD r_f
 SWP r_d
 MOD_SKIP_6:
-SUB r_a r_a
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
 JUMP MOD_LOOP_4
 MOD_END_5:
-SUB r_a r_a
+RST r_a
 ADD r_c
 MOD_ZERO_1:
 STORE 24
 WHILE_START_7:
 LOAD 25
-STORE 0
-SUB r_a r_a
-STORE 1
-LOAD 0
-SUB 1
+SWP r_g
+RST r_a
+SWP r_g
+SUB r_g
 JPOS NORM_TRUE_9
-SUB r_a r_a
+RST r_a
 JUMP NORM_END_10
 NORM_TRUE_9:
-SUB r_a r_a
+RST r_a
 INC r_a
 NORM_END_10:
 JZERO WHILE_END_8
 LOAD 25
-STORE 0
-SUB r_a r_a
+STORE 2
+SHR r_a
+SHL r_a
+SWP r_b
+LOAD 2
+SUB r_b
+STORE 26
+LOAD 26
+SWP r_g
+RST r_a
 SHL r_a
 INC r_a
-SHL r_a
+SWP r_g
+SUB r_g
+STORE 2
 STORE 1
+SWP r_g
+STORE 0
+LOAD 0
+SWP r_b
+LOAD 1
+SUB r_b
+STORE 2
 LOAD 1
 SWP r_b
 LOAD 0
-SWP r_c
-SUB r_a r_a
+SUB r_b
+SWP r_b
+LOAD 2
 ADD r_b
-JZERO MOD_ZERO_11
-SUB r_a r_a
-SWP r_d
-SUB r_a r_a
+JZERO BOOL_TRUE_13
+RST r_a
+JUMP BOOL_END_14
+BOOL_TRUE_13:
+RST r_a
 INC r_a
-SWP r_f
-SUB r_a r_a
-ADD r_b
-SWP r_e
-MOD_ALIGN_12:
-SUB r_a r_a
-ADD r_e
-SUB r_c
-JPOS MOD_ALIGN_END_13
-SUB r_a r_a
-ADD r_e
-SHL r_a
-SWP r_e
-SUB r_a r_a
-ADD r_f
-SHL r_a
-SWP r_f
-JUMP MOD_ALIGN_12
-MOD_ALIGN_END_13:
-SUB r_a r_a
-ADD r_e
-SHR r_a
-SWP r_e
-SUB r_a r_a
-ADD r_f
-SHR r_a
-SWP r_f
-MOD_LOOP_14:
-SUB r_a r_a
-ADD r_f
-JZERO MOD_END_15
-SUB r_a r_a
-ADD r_e
-SUB r_c
-JPOS MOD_SKIP_16
-SUB r_a r_a
-ADD r_c
-SUB r_e
-SWP r_c
-SUB r_a r_a
-ADD r_d
-ADD r_f
-SWP r_d
-MOD_SKIP_16:
-SUB r_a r_a
-ADD r_e
-SHR r_a
-SWP r_e
-SUB r_a r_a
-ADD r_f
-SHR r_a
-SWP r_f
-JUMP MOD_LOOP_14
-MOD_END_15:
-SUB r_a r_a
-ADD r_c
-MOD_ZERO_11:
-STORE 26
-LOAD 26
-STORE 0
-SUB r_a r_a
-SHL r_a
-INC r_a
-STORE 1
-LOAD 0
-SUB 1
-STORE 2
-LOAD 1
-SUB 0
-ADD 2
-JZERO BOOL_TRUE_19
-SUB r_a r_a
-JUMP BOOL_END_20
-BOOL_TRUE_19:
-SUB r_a r_a
-INC r_a
-BOOL_END_20:
-JZERO IF_ELSE_17
+BOOL_END_14:
+JZERO IF_ELSE_11
 LOAD 23
 SWP r_b
 RLOAD r_b
@@ -206,36 +147,40 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
-SWP r_d
-MULT_START_21:
+RST r_d
+MULT_START_15:
 SWP r_b
-JZERO MULT_END_22
+JZERO MULT_END_16
 SWP r_b
-SWP r_b
+RST r_a
+ADD r_b
 SWP r_e
-SWP r_b
-SUB r_a r_a
+RST r_a
 ADD r_b
 SHR r_a
 SHL r_a
 STORE 2
-SUB r_a r_a
+RST r_a
 ADD r_b
-SUB 2
-JZERO MULT_SKIP_ADD_23
+SWP r_b
+LOAD 2
+SWP r_f
+RST r_a
+ADD r_b
+SUB r_f
+JZERO MULT_SKIP_ADD_17
 SWP r_d
 ADD r_c
 SWP r_d
-MULT_SKIP_ADD_23:
+MULT_SKIP_ADD_17:
 SWP r_c
 SHL r_a
 SWP r_c
 SWP r_b
 SHR r_a
 SWP r_b
-JUMP MULT_START_21
-MULT_END_22:
+JUMP MULT_START_15
+MULT_END_16:
 SWP r_d
 STORE 23
 LOAD 23
@@ -250,149 +195,75 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_b
-JZERO MOD_ZERO_24
-SUB r_a r_a
-SWP r_d
-SUB r_a r_a
+JZERO MOD_ZERO_18
+RST r_d
+RST r_a
 INC r_a
 SWP r_f
-SUB r_a r_a
+RST r_a
 ADD r_b
 SWP r_e
-MOD_ALIGN_25:
-SUB r_a r_a
+MOD_ALIGN_19:
+RST r_a
 ADD r_e
 SUB r_c
-JPOS MOD_ALIGN_END_26
-SUB r_a r_a
+JPOS MOD_ALIGN_END_20
+RST r_a
 ADD r_e
 SHL r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHL r_a
 SWP r_f
-JUMP MOD_ALIGN_25
-MOD_ALIGN_END_26:
-SUB r_a r_a
+JUMP MOD_ALIGN_19
+MOD_ALIGN_END_20:
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
-MOD_LOOP_27:
-SUB r_a r_a
+MOD_LOOP_21:
+RST r_a
 ADD r_f
-JZERO MOD_END_28
-SUB r_a r_a
+JZERO MOD_END_22
+RST r_a
 ADD r_e
 SUB r_c
-JPOS MOD_SKIP_29
-SUB r_a r_a
+JPOS MOD_SKIP_23
+RST r_a
 ADD r_c
 SUB r_e
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_d
 ADD r_f
 SWP r_d
-MOD_SKIP_29:
-SUB r_a r_a
+MOD_SKIP_23:
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
-JUMP MOD_LOOP_27
-MOD_END_28:
-SUB r_a r_a
+JUMP MOD_LOOP_21
+MOD_END_22:
+RST r_a
 ADD r_c
-MOD_ZERO_24:
+MOD_ZERO_18:
 STORE 23
-JUMP IF_END_18
-IF_ELSE_17:
-IF_END_18:
+JUMP IF_END_12
+IF_ELSE_11:
+IF_END_12:
 LOAD 25
-STORE 0
-SUB r_a r_a
-SHL r_a
-INC r_a
-SHL r_a
-STORE 1
-LOAD 1
-SWP r_b
-LOAD 0
-SWP r_c
-SUB r_a r_a
-ADD r_b
-JZERO DIV_ZERO_30
-SUB r_a r_a
-SWP r_d
-SUB r_a r_a
-INC r_a
-SWP r_f
-SUB r_a r_a
-ADD r_b
-SWP r_e
-DIV_ALIGN_31:
-SUB r_a r_a
-ADD r_e
-SUB r_c
-JPOS DIV_ALIGN_END_32
-SUB r_a r_a
-ADD r_e
-SHL r_a
-SWP r_e
-SUB r_a r_a
-ADD r_f
-SHL r_a
-SWP r_f
-JUMP DIV_ALIGN_31
-DIV_ALIGN_END_32:
-SUB r_a r_a
-ADD r_e
 SHR r_a
-SWP r_e
-SUB r_a r_a
-ADD r_f
-SHR r_a
-SWP r_f
-DIV_LOOP_33:
-SUB r_a r_a
-ADD r_f
-JZERO DIV_END_34
-SUB r_a r_a
-ADD r_e
-SUB r_c
-JPOS DIV_SKIP_35
-SUB r_a r_a
-ADD r_c
-SUB r_e
-SWP r_c
-SUB r_a r_a
-ADD r_d
-ADD r_f
-SWP r_d
-DIV_SKIP_35:
-SUB r_a r_a
-ADD r_e
-SHR r_a
-SWP r_e
-SUB r_a r_a
-ADD r_f
-SHR r_a
-SWP r_f
-JUMP DIV_LOOP_33
-DIV_END_34:
-SUB r_a r_a
-ADD r_d
-DIV_ZERO_30:
 STORE 25
 LOAD 24
 STORE 0
@@ -402,36 +273,40 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
-SWP r_d
-MULT_START_36:
+RST r_d
+MULT_START_24:
 SWP r_b
-JZERO MULT_END_37
+JZERO MULT_END_25
 SWP r_b
-SWP r_b
+RST r_a
+ADD r_b
 SWP r_e
-SWP r_b
-SUB r_a r_a
+RST r_a
 ADD r_b
 SHR r_a
 SHL r_a
 STORE 2
-SUB r_a r_a
+RST r_a
 ADD r_b
-SUB 2
-JZERO MULT_SKIP_ADD_38
+SWP r_b
+LOAD 2
+SWP r_f
+RST r_a
+ADD r_b
+SUB r_f
+JZERO MULT_SKIP_ADD_26
 SWP r_d
 ADD r_c
 SWP r_d
-MULT_SKIP_ADD_38:
+MULT_SKIP_ADD_26:
 SWP r_c
 SHL r_a
 SWP r_c
 SWP r_b
 SHR r_a
 SWP r_b
-JUMP MULT_START_36
-MULT_END_37:
+JUMP MULT_START_24
+MULT_END_25:
 SWP r_d
 STORE 24
 LOAD 24
@@ -444,70 +319,69 @@ LOAD 1
 SWP r_b
 LOAD 0
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_b
-JZERO MOD_ZERO_39
-SUB r_a r_a
-SWP r_d
-SUB r_a r_a
+JZERO MOD_ZERO_27
+RST r_d
+RST r_a
 INC r_a
 SWP r_f
-SUB r_a r_a
+RST r_a
 ADD r_b
 SWP r_e
-MOD_ALIGN_40:
-SUB r_a r_a
+MOD_ALIGN_28:
+RST r_a
 ADD r_e
 SUB r_c
-JPOS MOD_ALIGN_END_41
-SUB r_a r_a
+JPOS MOD_ALIGN_END_29
+RST r_a
 ADD r_e
 SHL r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHL r_a
 SWP r_f
-JUMP MOD_ALIGN_40
-MOD_ALIGN_END_41:
-SUB r_a r_a
+JUMP MOD_ALIGN_28
+MOD_ALIGN_END_29:
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
-MOD_LOOP_42:
-SUB r_a r_a
+MOD_LOOP_30:
+RST r_a
 ADD r_f
-JZERO MOD_END_43
-SUB r_a r_a
+JZERO MOD_END_31
+RST r_a
 ADD r_e
 SUB r_c
-JPOS MOD_SKIP_44
-SUB r_a r_a
+JPOS MOD_SKIP_32
+RST r_a
 ADD r_c
 SUB r_e
 SWP r_c
-SUB r_a r_a
+RST r_a
 ADD r_d
 ADD r_f
 SWP r_d
-MOD_SKIP_44:
-SUB r_a r_a
+MOD_SKIP_32:
+RST r_a
 ADD r_e
 SHR r_a
 SWP r_e
-SUB r_a r_a
+RST r_a
 ADD r_f
 SHR r_a
 SWP r_f
-JUMP MOD_LOOP_42
-MOD_END_43:
-SUB r_a r_a
+JUMP MOD_LOOP_30
+MOD_END_31:
+RST r_a
 ADD r_c
-MOD_ZERO_39:
+MOD_ZERO_27:
 STORE 24
 JUMP WHILE_START_7
 WHILE_END_8:
@@ -516,7 +390,7 @@ MAIN:
 READ 27
 READ 28
 READ 29
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -527,7 +401,7 @@ INC r_a
 SHL r_a
 INC r_a
 STORE 20
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -537,7 +411,7 @@ INC r_a
 SHL r_a
 SHL r_a
 STORE 21
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -548,7 +422,7 @@ SHL r_a
 SHL r_a
 INC r_a
 STORE 22
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a

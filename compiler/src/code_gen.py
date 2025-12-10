@@ -7,22 +7,60 @@ class CodeGenerator:
         self.current_scope = 'GLOBAL'
         # Registers: a, b, c, d, e, f, g, h
         # r_a is accumulator
+        # r_b - r_f: General purpose / Multiplier / Divisor
+        # r_g: Expression stack optimization
+        # r_h: Return Address Stack Pointer (SP)
+        self.reg_stack = ['r_g']
+        self.stack_depth = 0
+        self.mem_spill_start = 2 # Locations 0 and 1 are used by MULT/DIV/Array
+        
+        # Initialize SP (r_h) to a high memory address
+        # We assume memory_counter is the last used address.
+        # We add a buffer for safety.
+        self.sp_start = self.symbol_table.memory_counter + 1000
         
     def emit(self, instr):
         self.code.append(instr)
 
     def get_code(self):
+        self.resolve_labels()
         return '\n'.join(self.code)
 
+    def resolve_labels(self):
+        # 1. Find all labels and their line numbers
+        labels = {}
+        clean_code = []
+        line_counter = 0
+        
+        for line in self.code:
+            line = line.strip()
+            if line.endswith(':'):
+                label_name = line[:-1]
+                labels[label_name] = line_counter
+            else:
+                clean_code.append(line)
+                line_counter += 1
+        
+        # 2. Replace labels with line numbers in JUMP instructions
+        final_code = []
+        for line in clean_code:
+            parts = line.split()
+            if parts[0] in ['JUMP', 'JPOS', 'JZERO', 'CALL']:
+                target = parts[1]
+                if target in labels:
+                    final_code.append(f"{parts[0]} {labels[target]}")
+                else:
+                    # Maybe it's already a number (unlikely in our gen) or external?
+                    final_code.append(line)
+            else:
+                final_code.append(line)
+                
+        self.code = final_code
+
     def generate(self, ast):
-        # Generate code for main program
-        # Procedures are generated first (jumps over them?)
-        # Usually:
-        # JUMP MAIN
-        # PROC1: ...
-        # PROC2: ...
-        # MAIN: ...
-        # HALT
+        # Initialize SP
+        self.generate_constant(self.sp_start)
+        self.emit("SWP r_h") # r_h = SP
         
         self.emit("JUMP MAIN")
         
@@ -39,16 +77,32 @@ class CodeGenerator:
         
         self.emit(f"PROC_{node.name}:")
         
-        # We might need to handle parameters here if they need copying?
-        # But they are passed by reference, so the caller sets up the addresses.
-        # The symbol table already has the addresses for args.
-        # Wait, if passed by reference, the symbol table entry for an arg
-        # should point to a memory location that HOLDS THE ADDRESS of the actual variable.
-        # So when we access an arg, we do indirect load.
+        # Save Return Address (r_a) to Stack
+        # Mem[SP] = r_a
+        # r_h is SP
+        # r_a has RetAddr (from CALL)
+        # We need RSTORE r_h (stores r_a to Mem[r_h])
+        self.emit("RSTORE r_h")
+        
+        # Increment SP
+        self.emit("INC r_h")
         
         self.generate_block(node)
         
+        # Restore Return Address
+        # Decrement SP
+        self.emit("DEC r_h")
+        
+        # Load RetAddr from Mem[SP]
+        # RLOAD r_h (loads Mem[r_h] to r_a)
+        self.emit("RLOAD r_h")
+        
+        # Jump to RetAddr
+        # RTRN jumps to address in r[0] (r_a)?
+        # Wait, VM spec for RTRN: "lr = r[0]"
+        # Yes, it sets PC to r[0].
         self.emit("RTRN")
+        
         self.current_scope = 'GLOBAL'
         self.symbol_table.exit_scope()
 
@@ -65,49 +119,75 @@ class CodeGenerator:
         raise Exception(f"No code gen for {node.__class__.__name__}")
 
     def visit_Assign(self, node):
-        # Calculate expression -> r_a
-        self.visit(node.expression)
-        
-        # Store r_a to variable
-        sym = self.symbol_table.get(node.identifier.name)
-        
         # If it's an array assignment: tab[i] := expr
-        if node.identifier.index:
-            # We need to calculate address: base + index - start
-            # This is complex because we need to preserve r_a (result of expr).
-            # So we should calculate address FIRST, save it, then calc expr.
+        if node.identifier.index is not None:
+            # 1. Calculate address
+            sym = self.symbol_table.get(node.identifier.name)
             
-            # 1. Calculate index
-            # Save r_a (expr result) is not available yet.
-            # So:
-            # Calc Index -> r_a
-            # ...
-            pass
-            # Better:
-            # 1. Calc Index -> r_a
-            # 2. Adjust for start index (SUB start)
-            # 3. Add base address (ADD base)
-            # 4. Store address in temporary register (e.g. r_b) or memory.
-            # 5. Calc Expression -> r_a
-            # 6. STORE r_a to address in r_b (STORE @r_b? No, STORE is direct. RSTORE is indirect)
-            # VM has RSTORE reg? "STORE (adresowanie bezpośrednie), RSTORE (adresowanie pośrednie przez rejestr)"
-            # Yes. RSTORE r_x stores r_a to address in r_x.
+            if isinstance(node.identifier.index, int):
+                self.generate_constant(node.identifier.index)
+            elif isinstance(node.identifier.index, str):
+                idx_sym = self.symbol_table.get(node.identifier.index)
+                self.emit(f"LOAD {idx_sym.address}")
+            else:
+                self.generate_constant(node.identifier.index)
             
-            pass
+            # r_a has index.
+            if sym.array_range is not None:
+                # Declared array
+                start = sym.array_range[0]
+                # index in r_a
+                self.emit("STORE 0") # Save index
+                self.generate_constant(start) # start in r_a
+                self.emit("SWP r_b") # start in r_b
+                self.emit("LOAD 0") # index in r_a
+                self.emit("SUB r_b") # index - start
+                
+                # Add base address
+                # offset in r_a
+                self.emit("SWP r_b") # offset in r_b
+                self.generate_constant(sym.address) # base in r_a
+                self.emit("ADD r_b") # base + offset
+            else:
+                # Parameter array
+                # index in r_a
+                self.emit("SWP r_b") # index in r_b
+                self.emit(f"LOAD {sym.address}") # virtual_base in r_a
+                self.emit("ADD r_b") # virtual_base + index
+                
+            # Address is in r_a. Store in temp.
+            loc = self.mem_spill_start + self.stack_depth
+            self.emit(f"STORE {loc}")
+            
+            # 2. Calculate expression -> r_a
+            self.stack_depth += 1
+            self.visit(node.expression)
+            self.stack_depth -= 1
+            
+            # 3. Store r_a to address in loc
+            # We need RSTORE r_b (stores r_a to address in r_b)
+            self.emit("SWP r_b") # r_b = value
+            self.emit(f"LOAD {loc}") # r_a = address
+            self.emit("SWP r_b") # r_a = value, r_b = address
+            self.emit("RSTORE r_b")
+            
         else:
             # Simple variable
-            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY']: # Arg passed by ref?
-                # If it's a local var (not arg), direct store.
-                # If it's an arg, it's a pointer.
-                # How do we distinguish?
-                # We need to know if it's a parameter.
-                # SymbolTable doesn't explicitly say "Parameter".
-                # But we can check if it's in `procedures[current_scope]['args']`.
-                
-                # Let's assume for now direct addressing for globals/locals, indirect for args.
-                # I need to check if it's an argument.
-                pass
+            self.visit(node.expression)
+            sym = self.symbol_table.get(node.identifier.name)
             
+            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY']:
+                # Check if param
+                current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
+                if is_param:
+                    # Indirect store
+                    self.emit("SWP r_b") # r_b = value
+                    self.emit(f"LOAD {sym.address}") # r_a = pointer
+                    self.emit("SWP r_b") # r_a = value, r_b = pointer
+                    self.emit("RSTORE r_b")
+                    return
+
             self.emit(f"STORE {sym.address}")
 
     def visit_Identifier(self, node):
@@ -134,24 +214,35 @@ class CodeGenerator:
             if sym.array_range is not None:
                 # Declared array: Address = base + index - start
                 start = sym.array_range[0]
+                # index in r_a
                 self.emit("STORE 0") # Save index
-                self.generate_constant(start)
-                self.emit("STORE 1") # Save start
-                self.emit("LOAD 0"); self.emit("SUB 1") # index - start
+                self.generate_constant(start) # start in r_a
+                self.emit("SWP r_b") # start in r_b
+                self.emit("LOAD 0") # index in r_a
+                self.emit("SUB r_b") # index - start
                 
                 # Add base address
-                self.emit("STORE 0") # Save offset
-                self.generate_constant(sym.address)
-                self.emit("ADD 0") # base + offset
+                # offset in r_a
+                self.emit("SWP r_b") # offset in r_b
+                self.generate_constant(sym.address) # base in r_a
+                self.emit("ADD r_b") # base + offset
             else:
                 # Array parameter: Address = virtual_base + index
                 # sym.address holds the virtual_base pointer
-                self.emit("STORE 0") # Save index
-                self.emit(f"LOAD {sym.address}") # Load virtual_base
-                self.emit("ADD 0") # virtual_base + index
+                # index in r_a
+                self.emit("SWP r_b") # index in r_b
+                self.emit(f"LOAD {sym.address}") # Load virtual_base in r_a
+                self.emit("ADD r_b") # virtual_base + index
             
             # Now r_a has the effective address.
             # Load value from this address.
+            # Use r_g as scratch if needed, but here we use r_b for RLOAD
+            # Note: visit_Identifier is atomic, but we must ensure we don't clobber
+            # registers if we are inside an optimized expression.
+            # However, RLOAD takes a register. We'll use r_b.
+            # If visit_Identifier is called inside visit_BinaryOp optimized path,
+            # r_b is NOT used by the optimization (it uses r_g, r_h).
+            # So using r_b here is safe!
             self.emit("SWP r_b")
             self.emit("RLOAD r_b")
             
@@ -215,7 +306,7 @@ class CodeGenerator:
         self.generate_constant(node.value)
 
     def generate_constant(self, value):
-        self.emit("SUB r_a r_a") # r_a = 0
+        self.emit("RST r_a") # r_a = 0
         if value == 0:
             return
         
@@ -226,64 +317,124 @@ class CodeGenerator:
             if bit == '1':
                 self.emit("INC r_a")
 
+    def is_power_of_two(self, n):
+        return n > 0 and (n & (n - 1)) == 0
+
+    def get_power_of_two(self, n):
+        return n.bit_length() - 1
+
     def visit_BinaryOp(self, node):
-        # Left -> r_a
-        # Store r_a to temp
-        # Right -> r_a
-        # Op
+        # Constant Folding
+        if isinstance(node.left, Number) and isinstance(node.right, Number):
+            val = 0
+            if node.op == '+': val = node.left.value + node.right.value
+            elif node.op == '-': val = max(0, node.left.value - node.right.value)
+            elif node.op == '*': val = node.left.value * node.right.value
+            elif node.op == '/': 
+                if node.right.value != 0: val = node.left.value // node.right.value
+                else: val = 0
+            elif node.op == '%':
+                if node.right.value != 0: val = node.left.value % node.right.value
+                else: val = 0
+            self.generate_constant(val)
+            return
+
+        # Strength Reduction for *, /, %
+        if node.op == '*':
+            if isinstance(node.right, Number) and self.is_power_of_two(node.right.value):
+                self.visit(node.left)
+                power = self.get_power_of_two(node.right.value)
+                for _ in range(power): self.emit("SHL r_a")
+                return
+            if isinstance(node.left, Number) and self.is_power_of_two(node.left.value):
+                self.visit(node.right)
+                power = self.get_power_of_two(node.left.value)
+                for _ in range(power): self.emit("SHL r_a")
+                return
         
-        self.visit(node.left)
-        self.emit("STORE 0") # Use scratchpad 0
-        
-        self.visit(node.right)
-        self.emit("STORE 1") # Use scratchpad 1
-        
-        # Load left back to r_a?
-        # Or load left to r_b?
-        # VM: ADD r_x? Or ADD address?
-        # If ADD takes address:
-        # LOAD 0 (left)
-        # ADD 1 (right)
-        
-        # Let's assume ADD/SUB take ADDRESS.
-        # "ADD (dodawanie)..."
-        # If it takes register, it would be ADD r_b.
-        # Report says: "ADD (dodawanie), SUB (odejmowanie)..."
-        # "Komunikacja z pamięcią: LOAD, STORE... RLOAD, RSTORE".
-        # This implies ADD/SUB might be register-register or register-memory.
-        # "Schemat blokowy... Dodaj r_c do wyniku r_d (ADD)." -> Implies register-register?
-        # "ADD r_b" -> Add r_b to r_a?
-        # Let's assume register-register is possible or default.
-        
-        # If ADD is register-register:
-        # LOAD 0 -> r_a
-        # SWP r_b (move r_a to r_b)
-        # LOAD 1 -> r_a
-        # ADD r_b (r_a = r_a + r_b) -> Wait, usually r_a += r_b.
-        # If we want Left + Right:
-        # Left is in 0. Right is in 1.
-        # LOAD 0 (Left) -> r_a
-        # ADD 1 (Right) -> r_a += Mem[1]
-        
-        # If ADD takes memory address, it's easier.
-        # Let's assume ADD takes memory address for now.
-        
-        if node.op == '+':
-            self.emit("LOAD 0")
-            self.emit("ADD 1")
-        elif node.op == '-':
-            self.emit("LOAD 0")
-            self.emit("SUB 1")
-        elif node.op == '*':
-            # Call multiplication routine
-            # We need to implement it.
-            # Pass args in registers or memory?
-            # Let's use memory 0 and 1.
-            self.generate_multiplication()
         elif node.op == '/':
-            self.generate_division()
+            if isinstance(node.right, Number) and self.is_power_of_two(node.right.value):
+                self.visit(node.left)
+                power = self.get_power_of_two(node.right.value)
+                for _ in range(power): self.emit("SHR r_a")
+                return
+
         elif node.op == '%':
-            self.generate_modulo()
+            if isinstance(node.right, Number) and self.is_power_of_two(node.right.value):
+                self.visit(node.left)
+                power = self.get_power_of_two(node.right.value)
+                
+                loc = self.mem_spill_start + self.stack_depth
+                self.emit(f"STORE {loc}")
+                
+                for _ in range(power): self.emit("SHR r_a")
+                for _ in range(power): self.emit("SHL r_a")
+                
+                self.emit("SWP r_b")
+                self.emit(f"LOAD {loc}")
+                self.emit("SUB r_b")
+                return
+
+        # Optimized BinaryOp using registers r_g, r_h
+        
+        if node.op in ['+', '-']:
+            self.visit(node.left)
+            
+            if self.stack_depth < len(self.reg_stack):
+                # Use register stack
+                reg = self.reg_stack[self.stack_depth]
+                self.emit(f"SWP {reg}") # Save left to reg
+                
+                self.stack_depth += 1
+                self.visit(node.right)
+                self.stack_depth -= 1
+                
+                # Perform Op
+                # Left is in reg, Right is in r_a
+                if node.op == '+':
+                    self.emit(f"ADD {reg}") # r_a = r_a + reg (commutative)
+                else: # '-'
+                    # r_a = left - right
+                    # left is in reg, right is in r_a
+                    # We want reg - r_a
+                    self.emit(f"SWP {reg}") # r_a = left, reg = right
+                    self.emit(f"SUB {reg}") # r_a = left - right
+            else:
+                # Spill to memory
+                loc = self.mem_spill_start + (self.stack_depth - len(self.reg_stack))
+                self.emit(f"STORE {loc}")
+                
+                self.stack_depth += 1
+                self.visit(node.right)
+                self.stack_depth -= 1
+                
+                # Perform Op
+                # Left in Mem[loc], Right in r_a
+                self.emit("SWP r_b") # Right in r_b
+                self.emit(f"LOAD {loc}") # Left in r_a
+                
+                if node.op == '+':
+                    self.emit("ADD r_b")
+                else: # '-'
+                    self.emit("SUB r_b")
+
+        elif node.op in ['*', '/', '%']:
+            # Complex ops use fixed memory 0 and 1 and clobber r_b...r_f
+            # We must ensure we don't rely on r_b...r_f being preserved.
+            # Our optimization uses r_g, r_h, so it is safe.
+            
+            self.visit(node.left)
+            self.emit("STORE 0")
+            
+            self.visit(node.right)
+            self.emit("STORE 1")
+            
+            if node.op == '*':
+                self.generate_multiplication()
+            elif node.op == '/':
+                self.generate_division()
+            elif node.op == '%':
+                self.generate_modulo()
 
     def generate_multiplication(self):
         # Inputs: Mem[0] (Multiplicand a), Mem[1] (Multiplier b)
@@ -303,8 +454,7 @@ class CodeGenerator:
         self.emit("SWP r_c")
         
         # Init res (r_d) = 0
-        self.emit("SUB r_a r_a") # r_a = 0
-        self.emit("SWP r_d")
+        self.emit("RST r_d")
         
         start_label = self.get_new_label("MULT_START")
         end_label = self.get_new_label("MULT_END")
@@ -319,55 +469,54 @@ class CodeGenerator:
         
         # Check parity: (b / 2) * 2 == b?
         # Copy b to r_e
-        self.emit("SWP r_b") # r_a = b
-        self.emit("SWP r_e") # r_e = b, r_a = old_e (garbage)
-        self.emit("SWP r_b") # Restore b (r_a = garbage, r_b = b) -> Wait, SWP swaps.
-        # Correct copy sequence:
-        # r_a has something. r_b has B.
-        # SWP r_b -> r_a=B, r_b=garbage
-        # SWP r_e -> r_e=B, r_a=old_e
-        # SWP r_b -> r_b=old_e, r_a=B -> WRONG. We lost B from r_b.
-        
-        # To copy r_b to r_e using SWP:
-        # We need to use r_a as bridge.
-        # But SWP destroys source.
-        # We must use ADD?
-        # r_a = 0. ADD r_b -> r_a = b.
-        # Then SWP r_e.
-        # So:
-        # SUB r_a r_a
-        # ADD r_b (Assuming ADD r_b adds r_b to r_a)
-        # SWP r_e (r_e = b)
+        self.emit("RST r_a")
+        self.emit("ADD r_b")
+        self.emit("SWP r_e") # r_e = b
         
         # Check parity of r_e
-        self.emit("SUB r_a r_a")
+        self.emit("RST r_a")
         self.emit("ADD r_b")
         self.emit("SHR r_a")
         self.emit("SHL r_a")
         # Now r_a = (b >> 1) << 1.
         # Subtract from b (r_b)
-        # r_a = b - r_a. If 1, then odd. If 0, even.
-        # Wait, SUB is r_a = r_a - operand? Or r_a = operand - r_a?
-        # Usually r_a -= operand.
-        # So we want b - ((b>>1)<<1).
-        # We have ((b>>1)<<1) in r_a.
-        # We want to subtract it FROM b.
-        # But we can't easily do `SUB r_b` (r_a - r_b). That gives negative.
-        # But `SUB` is saturated to 0.
-        # If b is odd (e.g. 3), cleared is 2. 2 - 3 = 0 (saturated).
-        # If b is even (e.g. 2), cleared is 2. 2 - 2 = 0.
-        # This doesn't help.
-        
-        # We need b - cleared.
+        # We want b - cleared.
         # Store cleared to temp (Mem[2]).
         self.emit("STORE 2")
         
         # Load b
-        self.emit("SUB r_a r_a")
+        self.emit("RST r_a")
         self.emit("ADD r_b")
         
         # Subtract cleared
-        self.emit("SUB 2")
+        self.emit("SWP r_b") # r_b = b (Wait, r_b was b)
+        # r_a = b.
+        # We want r_a - Mem[2].
+        # SWP r_b -> r_b = b. r_a = garbage.
+        # LOAD 2 -> r_a = cleared.
+        # SUB r_b -> cleared - b. WRONG.
+        
+        # We want b - cleared.
+        # r_a = b.
+        # SWP r_b -> r_b = b.
+        # LOAD 2 -> r_a = cleared.
+        # We want r_b - r_a.
+        # But SUB is r_a -= r_x.
+        # So we need r_a = b, r_x = cleared.
+        # r_a = b (from ADD r_b above).
+        # We need cleared in a register.
+        # We can use r_e (it has b, but we can overwrite it if we don't need it yet? No we need it).
+        # Use r_f as temp?
+        # Or just LOAD 2 into r_f?
+        # LOAD 2 -> r_a. SWP r_f -> r_f = cleared.
+        # RST r_a. ADD r_b -> r_a = b.
+        # SUB r_f -> b - cleared.
+        
+        self.emit("LOAD 2")
+        self.emit("SWP r_f") # r_f = cleared
+        self.emit("RST r_a")
+        self.emit("ADD r_b") # r_a = b
+        self.emit("SUB r_f") # r_a = b - cleared
         
         # Now r_a is 1 (odd) or 0 (even).
         self.emit(f"JZERO {skip_add_label}")
@@ -527,56 +676,96 @@ class CodeGenerator:
 
     def visit_Condition(self, node):
         # Evaluate condition -> r_a = 1 (true) or 0 (false)
-        # Left in 0, Right in 1
+        # Optimize using registers r_g, r_h if possible
+        
         self.visit(node.left)
-        self.emit("STORE 0")
+        
+        # Use r_g to store left operand
+        self.emit("SWP r_g")
+        
         self.visit(node.right)
-        self.emit("STORE 1")
+        # Right in r_a, Left in r_g
         
         # EQ: a == b <=> a-b == 0 AND b-a == 0
         if node.op == '=':
-            self.emit("LOAD 0"); self.emit("SUB 1"); self.emit("STORE 2") # a-b
-            self.emit("LOAD 1"); self.emit("SUB 0"); self.emit("ADD 2")   # (b-a) + (a-b)
-            # If 0, then equal.
-            # We want 1 if equal, 0 if not.
-            # Current r_a is 0 if equal, >0 if not.
-            # Invert: If 0 -> 1, If >0 -> 0.
-            # How to invert?
-            # JZERO TRUE
-            # LOAD 0
-            # JUMP END
-            # TRUE: LOAD 1
-            # END:
+            # Check a-b
+            self.emit("SWP r_g") # r_a=Left, r_g=Right
+            self.emit("SUB r_g") # Left - Right
+            self.emit("STORE 2") # Save result 1
+            
+            # Check b-a
+            # Restore Right (r_g) and Left (we lost original Left, but we have Left-Right)
+            # Actually, we need original values.
+            # Since SUB destroys r_a, we should have saved copies?
+            # Or just use memory for EQ/NEQ which need double check.
+            # For EQ/NEQ, let's fallback to memory to be safe and simple.
+            pass
+        
+        # For <, >, <=, >= we only need one subtraction.
+        # a < b <=> b - a > 0
+        # a > b <=> a - b > 0
+        
+        if node.op == '<':
+            # b - a > 0
+            # Right (r_a) - Left (r_g)
+            self.emit("SUB r_g")
+            self.emit_normalize_boolean()
+            return
+
+        elif node.op == '>':
+            # a - b > 0
+            # Left (r_g) - Right (r_a)
+            self.emit("SWP r_g") # r_a=Left, r_g=Right
+            self.emit("SUB r_g")
+            self.emit_normalize_boolean()
+            return
+            
+        elif node.op == '<=':
+            # a <= b <=> not (a > b) <=> not (a - b > 0)
+            self.emit("SWP r_g")
+            self.emit("SUB r_g")
+            self.emit_normalize_boolean()
+            self.emit_invert_boolean_val()
+            return
+            
+        elif node.op == '>=':
+            # a >= b <=> not (a < b) <=> not (b - a > 0)
+            # Right - Left
+            self.emit("SUB r_g")
+            self.emit_normalize_boolean()
+            self.emit_invert_boolean_val()
+            return
+
+        # Fallback for =, != (or if we didn't return above)
+        # Reload from r_g is hard because we swapped/clobbered.
+        # So for =, != we use the old memory method.
+        # But we already executed visit(left) and visit(right)!
+        # And left is in r_g, right is in r_a.
+        
+        if node.op == '=':
+            # Left in r_g, Right in r_a
+            self.emit("STORE 1") # Right -> 1
+            self.emit("SWP r_g") # Left -> r_a
+            self.emit("STORE 0") # Left -> 0
+            
+            # a-b
+            self.emit("LOAD 0"); self.emit("SWP r_b"); self.emit("LOAD 1"); self.emit("SUB r_b"); self.emit("STORE 2")
+            # b-a
+            self.emit("LOAD 1"); self.emit("SWP r_b"); self.emit("LOAD 0"); self.emit("SUB r_b"); self.emit("SWP r_b"); self.emit("LOAD 2"); self.emit("ADD r_b")
+            
             self.emit_invert_boolean()
             
         elif node.op == '!=':
-            self.emit("LOAD 0"); self.emit("SUB 1"); self.emit("STORE 2")
-            self.emit("LOAD 1"); self.emit("SUB 0"); self.emit("ADD 2")
-            # If >0, then not equal.
-            # We want 1 if >0, 0 if 0.
-            self.emit_normalize_boolean()
+            self.emit("STORE 1")
+            self.emit("SWP r_g")
+            self.emit("STORE 0")
             
-        elif node.op == '<':
-            # a < b <=> b - a > 0
-            self.emit("LOAD 1"); self.emit("SUB 0")
-            self.emit_normalize_boolean()
+            # a-b
+            self.emit("LOAD 0"); self.emit("SWP r_b"); self.emit("LOAD 1"); self.emit("SUB r_b"); self.emit("STORE 2")
+            # b-a
+            self.emit("LOAD 1"); self.emit("SWP r_b"); self.emit("LOAD 0"); self.emit("SUB r_b"); self.emit("SWP r_b"); self.emit("LOAD 2"); self.emit("ADD r_b")
             
-        elif node.op == '>':
-            # a > b <=> a - b > 0
-            self.emit("LOAD 0"); self.emit("SUB 1")
             self.emit_normalize_boolean()
-            
-        elif node.op == '<=':
-            # a <= b <=> not (a > b)
-            self.emit("LOAD 0"); self.emit("SUB 1")
-            self.emit_normalize_boolean() # 1 if a > b
-            self.emit_invert_boolean_val() # 0 if a > b (so a <= b)
-            
-        elif node.op == '>=':
-            # a >= b <=> not (a < b)
-            self.emit("LOAD 1"); self.emit("SUB 0")
-            self.emit_normalize_boolean()
-            self.emit_invert_boolean_val()
 
     def emit_invert_boolean(self):
         # If r_a == 0 -> r_a = 1
@@ -584,10 +773,10 @@ class CodeGenerator:
         lbl_true = self.get_new_label("BOOL_TRUE")
         lbl_end = self.get_new_label("BOOL_END")
         self.emit(f"JZERO {lbl_true}")
-        self.emit("SUB r_a r_a") # 0
+        self.emit("RST r_a") # 0
         self.emit(f"JUMP {lbl_end}")
         self.emit(f"{lbl_true}:")
-        self.emit("SUB r_a r_a"); self.emit("INC r_a") # 1
+        self.emit("RST r_a"); self.emit("INC r_a") # 1
         self.emit(f"{lbl_end}:")
 
     def emit_normalize_boolean(self):
@@ -596,10 +785,10 @@ class CodeGenerator:
         lbl_true = self.get_new_label("NORM_TRUE")
         lbl_end = self.get_new_label("NORM_END")
         self.emit(f"JPOS {lbl_true}")
-        self.emit("SUB r_a r_a")
+        self.emit("RST r_a")
         self.emit(f"JUMP {lbl_end}")
         self.emit(f"{lbl_true}:")
-        self.emit("SUB r_a r_a"); self.emit("INC r_a")
+        self.emit("RST r_a"); self.emit("INC r_a")
         self.emit(f"{lbl_end}:")
         
     def emit_invert_boolean_val(self):
@@ -607,8 +796,11 @@ class CodeGenerator:
          # 0 -> 1, 1 -> 0
          # 1 - r_a
          self.emit("STORE 2")
-         self.emit("SUB r_a r_a"); self.emit("INC r_a") # 1
-         self.emit("SUB 2")
+         self.emit("RST r_a"); self.emit("INC r_a") # 1
+         self.emit("SWP r_b"); self.emit("LOAD 2"); self.emit("SUB r_b") # 1 - old_val (Wait, SUB is r_a - r_b)
+         # We want 1 - old_val.
+         # r_a = 1. r_b = old_val.
+         # SUB r_b -> 1 - old_val. Correct.
 
     def generate_division(self):
         # Inputs: Mem[0] (Dividend A), Mem[1] (Divisor B)
@@ -627,18 +819,18 @@ class CodeGenerator:
         self.emit("LOAD 0"); self.emit("SWP r_c")
         
         # Check B == 0
-        self.emit("SUB r_a r_a"); self.emit("ADD r_b")
+        self.emit("RST r_a"); self.emit("ADD r_b")
         lbl_zero = self.get_new_label("DIV_ZERO")
         self.emit(f"JZERO {lbl_zero}")
         
         # Init Q = 0 -> r_d
-        self.emit("SUB r_a r_a"); self.emit("SWP r_d")
+        self.emit("RST r_d")
         
         # Init Shift Count (Power) = 1 -> r_f
-        self.emit("SUB r_a r_a"); self.emit("INC r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("INC r_a"); self.emit("SWP r_f")
         
         # Init Shifted Divisor D = B -> r_e
-        self.emit("SUB r_a r_a"); self.emit("ADD r_b"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_b"); self.emit("SWP r_e")
         
         # Align D to A (Shift Left Loop)
         lbl_align = self.get_new_label("DIV_ALIGN")
@@ -647,23 +839,23 @@ class CodeGenerator:
         self.emit(f"{lbl_align}:")
         # Check if D > A (r_e > r_c)
         # r_e - r_c > 0?
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e") # r_a = D
+        self.emit("RST r_a"); self.emit("ADD r_e") # r_a = D
         self.emit("SUB r_c") # r_a = D - A
         self.emit(f"JPOS {lbl_align_end}") # If D > A, stop shifting
         
         # Shift D left
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHL r_a"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_e"); self.emit("SHL r_a"); self.emit("SWP r_e")
         
         # Shift Power left
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHL r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("ADD r_f"); self.emit("SHL r_a"); self.emit("SWP r_f")
         
         self.emit(f"JUMP {lbl_align}")
         self.emit(f"{lbl_align_end}:")
         
         # Now D > A. We went one step too far.
         # Shift back right once.
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
         
         # Main Loop (Subtract and Shift Right)
         lbl_loop = self.get_new_label("DIV_LOOP")
@@ -671,39 +863,36 @@ class CodeGenerator:
         
         self.emit(f"{lbl_loop}:")
         # Check if Power (r_f) == 0 -> End
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f")
+        self.emit("RST r_a"); self.emit("ADD r_f")
         self.emit(f"JZERO {lbl_end}")
         
         # Check if R >= D (r_c >= r_e)
         # D - R <= 0? Or R - D >= 0?
         # Use SUB: D - R. If > 0, then D > R (skip). If 0, then D <= R (subtract).
-        # Wait, SUB is saturated.
-        # If D > R, D - R > 0.
-        # If D <= R, D - R = 0.
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e") # D
+        self.emit("RST r_a"); self.emit("ADD r_e") # D
         self.emit("SUB r_c") # D - R
         lbl_skip = self.get_new_label("DIV_SKIP")
         self.emit(f"JPOS {lbl_skip}")
         
         # R = R - D
-        self.emit("SUB r_a r_a"); self.emit("ADD r_c"); self.emit("SUB r_e"); self.emit("SWP r_c")
+        self.emit("RST r_a"); self.emit("ADD r_c"); self.emit("SUB r_e"); self.emit("SWP r_c")
         
         # Q = Q + Power
-        self.emit("SUB r_a r_a"); self.emit("ADD r_d"); self.emit("ADD r_f"); self.emit("SWP r_d")
+        self.emit("RST r_a"); self.emit("ADD r_d"); self.emit("ADD r_f"); self.emit("SWP r_d")
         
         self.emit(f"{lbl_skip}:")
         
         # Shift D right
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
         
         # Shift Power right
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
         
         self.emit(f"JUMP {lbl_loop}")
         
         self.emit(f"{lbl_end}:")
         # Result Q in r_d -> r_a
-        self.emit("SUB r_a r_a"); self.emit("ADD r_d")
+        self.emit("RST r_a"); self.emit("ADD r_d")
         
         self.emit(f"{lbl_zero}:")
 
@@ -712,7 +901,6 @@ class CodeGenerator:
         # Output: r_a (Remainder)
         
         # Reuse division logic but return Remainder (r_c) instead of Quotient (r_d)
-        # I'll copy-paste and modify for now to avoid complex refactoring risks
         
         # r_b: Divisor (B)
         # r_c: Dividend (A) -> Remainder (R)
@@ -727,18 +915,18 @@ class CodeGenerator:
         self.emit("LOAD 0"); self.emit("SWP r_c")
         
         # Check B == 0
-        self.emit("SUB r_a r_a"); self.emit("ADD r_b")
+        self.emit("RST r_a"); self.emit("ADD r_b")
         lbl_zero = self.get_new_label("MOD_ZERO")
         self.emit(f"JZERO {lbl_zero}")
         
         # Init Q = 0 -> r_d
-        self.emit("SUB r_a r_a"); self.emit("SWP r_d")
+        self.emit("RST r_d")
         
         # Init Shift Count (Power) = 1 -> r_f
-        self.emit("SUB r_a r_a"); self.emit("INC r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("INC r_a"); self.emit("SWP r_f")
         
         # Init Shifted Divisor D = B -> r_e
-        self.emit("SUB r_a r_a"); self.emit("ADD r_b"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_b"); self.emit("SWP r_e")
         
         # Align D to A (Shift Left Loop)
         lbl_align = self.get_new_label("MOD_ALIGN")
@@ -746,23 +934,23 @@ class CodeGenerator:
         
         self.emit(f"{lbl_align}:")
         # Check if D > A (r_e > r_c)
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e") # r_a = D
+        self.emit("RST r_a"); self.emit("ADD r_e") # r_a = D
         self.emit("SUB r_c") # r_a = D - A
         self.emit(f"JPOS {lbl_align_end}") # If D > A, stop shifting
         
         # Shift D left
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHL r_a"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_e"); self.emit("SHL r_a"); self.emit("SWP r_e")
         
         # Shift Power left
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHL r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("ADD r_f"); self.emit("SHL r_a"); self.emit("SWP r_f")
         
         self.emit(f"JUMP {lbl_align}")
         self.emit(f"{lbl_align_end}:")
         
         # Now D > A. We went one step too far.
         # Shift back right once.
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
         
         # Main Loop (Subtract and Shift Right)
         lbl_loop = self.get_new_label("MOD_LOOP")
@@ -770,34 +958,34 @@ class CodeGenerator:
         
         self.emit(f"{lbl_loop}:")
         # Check if Power (r_f) == 0 -> End
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f")
+        self.emit("RST r_a"); self.emit("ADD r_f")
         self.emit(f"JZERO {lbl_end}")
         
         # Check if R >= D (r_c >= r_e)
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e") # D
+        self.emit("RST r_a"); self.emit("ADD r_e") # D
         self.emit("SUB r_c") # D - R
         lbl_skip = self.get_new_label("MOD_SKIP")
         self.emit(f"JPOS {lbl_skip}")
         
         # R = R - D
-        self.emit("SUB r_a r_a"); self.emit("ADD r_c"); self.emit("SUB r_e"); self.emit("SWP r_c")
+        self.emit("RST r_a"); self.emit("ADD r_c"); self.emit("SUB r_e"); self.emit("SWP r_c")
         
         # Q = Q + Power (Not needed for Modulo, but kept for symmetry/correctness of loop)
-        self.emit("SUB r_a r_a"); self.emit("ADD r_d"); self.emit("ADD r_f"); self.emit("SWP r_d")
+        self.emit("RST r_a"); self.emit("ADD r_d"); self.emit("ADD r_f"); self.emit("SWP r_d")
         
         self.emit(f"{lbl_skip}:")
         
         # Shift D right
-        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
+        self.emit("RST r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
         
         # Shift Power right
-        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
+        self.emit("RST r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
         
         self.emit(f"JUMP {lbl_loop}")
         
         self.emit(f"{lbl_end}:")
         # Result R in r_c -> r_a
-        self.emit("SUB r_a r_a"); self.emit("ADD r_c")
+        self.emit("RST r_a"); self.emit("ADD r_c")
         
         self.emit(f"{lbl_zero}:")
 
@@ -879,22 +1067,77 @@ class CodeGenerator:
         return f"{prefix}_{self.label_counter}"
 
     def visit_Read(self, node):
-        # READ returns to r_a? Or READ address?
-        # "READ, WRITE. Koszt: 100 cykli."
-        # Usually READ address.
+        # READ reads into r_a
+        
+        # We need to store r_a into node.identifier
+        # But calculating address of identifier might use r_a.
+        # So we calculate address first, save it, then READ, then STORE.
+        
         sym = self.symbol_table.get(node.identifier.name)
-        self.emit(f"READ {sym.address}")
+        
+        if node.identifier.index is not None:
+            # Array access: tab[i]
+            # Calculate address into r_b
+            
+            if isinstance(node.identifier.index, int):
+                self.generate_constant(node.identifier.index)
+            elif isinstance(node.identifier.index, str):
+                idx_sym = self.symbol_table.get(node.identifier.index)
+                self.emit(f"LOAD {idx_sym.address}")
+            else:
+                self.generate_constant(node.identifier.index)
+            
+            # r_a has index
+            
+            if sym.array_range is not None:
+                # Declared array
+                start = sym.array_range[0]
+                self.emit("STORE 0") # Save index
+                self.generate_constant(start)
+                self.emit("SWP r_b")
+                self.emit("LOAD 0")
+                self.emit("SUB r_b") # index - start
+                
+                self.emit("SWP r_b")
+                self.generate_constant(sym.address)
+                self.emit("ADD r_b") # base + offset -> r_a
+            else:
+                # Parameter array
+                self.emit("SWP r_b")
+                self.emit(f"LOAD {sym.address}")
+                self.emit("ADD r_b") # virtual_base + index -> r_a
+                
+            # Address is in r_a. Move to r_b.
+            self.emit("SWP r_b")
+            
+            # READ
+            self.emit("READ")
+            
+            # Store
+            self.emit("RSTORE r_b")
+            
+        else:
+            # Simple variable
+            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY']:
+                # Check if param
+                current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
+                if is_param:
+                    # Pointer. Load address to r_b.
+                    self.emit(f"LOAD {sym.address}")
+                    self.emit("SWP r_b")
+                    self.emit("READ")
+                    self.emit("RSTORE r_b")
+                    return
+
+            # Normal variable
+            # We can just READ then STORE addr
+            self.emit("READ")
+            self.emit(f"STORE {sym.address}")
 
     def visit_Write(self, node):
-        # WRITE value? Or WRITE address?
-        # Usually WRITE address.
-        # If we have an expression, we compute it to r_a, store to temp, then WRITE temp.
-        if isinstance(node.value, Identifier):
-             sym = self.symbol_table.get(node.value.name)
-             self.emit(f"WRITE {sym.address}")
-        else:
-             # Expression or Number
-             self.visit(node.value)
-             self.emit("STORE 0")
-             self.emit("WRITE 0")
+        # Evaluate expression to r_a
+        self.visit(node.value)
+        # WRITE prints r_a
+        self.emit("WRITE")
 

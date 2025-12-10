@@ -3,7 +3,7 @@ MAIN:
 READ 20
 READ 21
 READ 22
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -35,8 +35,8 @@ INC r_a
 STORE 23
 WHILE_START_1:
 LOAD 23
-STORE 0
-SUB r_a r_a
+SWP r_g
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -61,22 +61,23 @@ INC r_a
 SHL r_a
 INC r_a
 SHL r_a
-STORE 1
-LOAD 0
-SUB 1
+SWP r_g
+SUB r_g
 JPOS NORM_TRUE_3
-SUB r_a r_a
+RST r_a
 JUMP NORM_END_4
 NORM_TRUE_3:
-SUB r_a r_a
+RST r_a
 INC r_a
 NORM_END_4:
 STORE 2
-SUB r_a r_a
+RST r_a
 INC r_a
-SUB 2
+SWP r_b
+LOAD 2
+SUB r_b
 JZERO WHILE_END_2
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -92,8 +93,8 @@ INC r_a
 STORE 24
 WHILE_START_5:
 LOAD 24
-STORE 0
-SUB r_a r_a
+SWP r_g
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -105,22 +106,22 @@ INC r_a
 SHL r_a
 SHL r_a
 SHL r_a
-STORE 1
-LOAD 1
-SUB 0
+SUB r_g
 JPOS NORM_TRUE_7
-SUB r_a r_a
+RST r_a
 JUMP NORM_END_8
 NORM_TRUE_7:
-SUB r_a r_a
+RST r_a
 INC r_a
 NORM_END_8:
 STORE 2
-SUB r_a r_a
+RST r_a
 INC r_a
-SUB 2
+SWP r_b
+LOAD 2
+SUB r_b
 JZERO WHILE_END_6
-SUB r_a r_a
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -131,8 +132,8 @@ INC r_a
 STORE 25
 WHILE_START_9:
 LOAD 25
-STORE 0
-SUB r_a r_a
+SWP r_g
+RST r_a
 SHL r_a
 INC r_a
 SHL r_a
@@ -140,72 +141,62 @@ SHL r_a
 INC r_a
 SHL r_a
 SHL r_a
-STORE 1
-LOAD 0
-SUB 1
+SWP r_g
+SUB r_g
 JPOS NORM_TRUE_11
-SUB r_a r_a
+RST r_a
 JUMP NORM_END_12
 NORM_TRUE_11:
-SUB r_a r_a
+RST r_a
 INC r_a
 NORM_END_12:
 STORE 2
-SUB r_a r_a
+RST r_a
 INC r_a
-SUB 2
+SWP r_b
+LOAD 2
+SUB r_b
 JZERO WHILE_END_10
 LOAD 20
-STORE 0
+SWP r_g
 LOAD 25
-STORE 1
-LOAD 0
-ADD 1
+ADD r_g
 STORE 20
 LOAD 25
-STORE 0
-SUB r_a r_a
+SWP r_g
+RST r_a
 SHL r_a
 INC r_a
-STORE 1
-LOAD 0
-ADD 1
+ADD r_g
 STORE 25
 JUMP WHILE_START_9
 WHILE_END_10:
 LOAD 21
-STORE 0
+SWP r_g
 LOAD 24
-STORE 1
-LOAD 0
-ADD 1
+ADD r_g
 STORE 21
 LOAD 24
-STORE 0
-SUB r_a r_a
+SWP r_g
+RST r_a
 SHL r_a
 INC r_a
-STORE 1
-LOAD 0
-SUB 1
+SWP r_g
+SUB r_g
 STORE 24
 JUMP WHILE_START_5
 WHILE_END_6:
 LOAD 22
-STORE 0
+SWP r_g
 LOAD 23
-STORE 1
-LOAD 0
-ADD 1
+ADD r_g
 STORE 22
 LOAD 23
-STORE 0
-SUB r_a r_a
+SWP r_g
+RST r_a
 SHL r_a
 INC r_a
-STORE 1
-LOAD 0
-ADD 1
+ADD r_g
 STORE 23
 JUMP WHILE_START_1
 WHILE_END_2:
