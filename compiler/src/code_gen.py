@@ -35,12 +35,7 @@ class CodeGenerator:
 
     def generate_procedure(self, node):
         self.current_scope = node.name
-        # Label for procedure
-        # We need to handle procedure entry/exit?
-        # Since no recursion, we don't need stack frames.
-        # Just a label.
-        # But wait, how do we return?
-        # The VM has CALL/RTRN? Yes.
+        self.symbol_table.enter_scope(node.name)
         
         self.emit(f"PROC_{node.name}:")
         
@@ -55,6 +50,7 @@ class CodeGenerator:
         
         self.emit("RTRN")
         self.current_scope = 'GLOBAL'
+        self.symbol_table.exit_scope()
 
     def generate_block(self, node):
         for cmd in node.commands:
@@ -134,17 +130,25 @@ class CodeGenerator:
                     self.generate_constant(node.index)
             
             # r_a has index value.
-            # Subtract start index
-            start = sym.array_range[0]
-            self.emit("STORE 0") # Save index
-            self.generate_constant(start)
-            self.emit("STORE 1") # Save start
-            self.emit("LOAD 0"); self.emit("SUB 1") # index - start
             
-            # Add base address
-            self.emit("STORE 0") # Save offset
-            self.generate_constant(sym.address)
-            self.emit("ADD 0") # base + offset
+            if sym.array_range is not None:
+                # Declared array: Address = base + index - start
+                start = sym.array_range[0]
+                self.emit("STORE 0") # Save index
+                self.generate_constant(start)
+                self.emit("STORE 1") # Save start
+                self.emit("LOAD 0"); self.emit("SUB 1") # index - start
+                
+                # Add base address
+                self.emit("STORE 0") # Save offset
+                self.generate_constant(sym.address)
+                self.emit("ADD 0") # base + offset
+            else:
+                # Array parameter: Address = virtual_base + index
+                # sym.address holds the virtual_base pointer
+                self.emit("STORE 0") # Save index
+                self.emit(f"LOAD {sym.address}") # Load virtual_base
+                self.emit("ADD 0") # virtual_base + index
             
             # Now r_a has the effective address.
             # Load value from this address.
@@ -703,6 +707,100 @@ class CodeGenerator:
         
         self.emit(f"{lbl_zero}:")
 
+    def generate_modulo(self):
+        # Inputs: Mem[0] (Dividend A), Mem[1] (Divisor B)
+        # Output: r_a (Remainder)
+        
+        # Reuse division logic but return Remainder (r_c) instead of Quotient (r_d)
+        # I'll copy-paste and modify for now to avoid complex refactoring risks
+        
+        # r_b: Divisor (B)
+        # r_c: Dividend (A) -> Remainder (R)
+        # r_d: Quotient (Q)
+        # r_e: Temp D (shifted divisor)
+        # r_f: Shift count (power of 2)
+        
+        # Load B -> r_b
+        self.emit("LOAD 1"); self.emit("SWP r_b")
+        
+        # Load A -> r_c
+        self.emit("LOAD 0"); self.emit("SWP r_c")
+        
+        # Check B == 0
+        self.emit("SUB r_a r_a"); self.emit("ADD r_b")
+        lbl_zero = self.get_new_label("MOD_ZERO")
+        self.emit(f"JZERO {lbl_zero}")
+        
+        # Init Q = 0 -> r_d
+        self.emit("SUB r_a r_a"); self.emit("SWP r_d")
+        
+        # Init Shift Count (Power) = 1 -> r_f
+        self.emit("SUB r_a r_a"); self.emit("INC r_a"); self.emit("SWP r_f")
+        
+        # Init Shifted Divisor D = B -> r_e
+        self.emit("SUB r_a r_a"); self.emit("ADD r_b"); self.emit("SWP r_e")
+        
+        # Align D to A (Shift Left Loop)
+        lbl_align = self.get_new_label("MOD_ALIGN")
+        lbl_align_end = self.get_new_label("MOD_ALIGN_END")
+        
+        self.emit(f"{lbl_align}:")
+        # Check if D > A (r_e > r_c)
+        self.emit("SUB r_a r_a"); self.emit("ADD r_e") # r_a = D
+        self.emit("SUB r_c") # r_a = D - A
+        self.emit(f"JPOS {lbl_align_end}") # If D > A, stop shifting
+        
+        # Shift D left
+        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHL r_a"); self.emit("SWP r_e")
+        
+        # Shift Power left
+        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHL r_a"); self.emit("SWP r_f")
+        
+        self.emit(f"JUMP {lbl_align}")
+        self.emit(f"{lbl_align_end}:")
+        
+        # Now D > A. We went one step too far.
+        # Shift back right once.
+        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
+        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
+        
+        # Main Loop (Subtract and Shift Right)
+        lbl_loop = self.get_new_label("MOD_LOOP")
+        lbl_end = self.get_new_label("MOD_END")
+        
+        self.emit(f"{lbl_loop}:")
+        # Check if Power (r_f) == 0 -> End
+        self.emit("SUB r_a r_a"); self.emit("ADD r_f")
+        self.emit(f"JZERO {lbl_end}")
+        
+        # Check if R >= D (r_c >= r_e)
+        self.emit("SUB r_a r_a"); self.emit("ADD r_e") # D
+        self.emit("SUB r_c") # D - R
+        lbl_skip = self.get_new_label("MOD_SKIP")
+        self.emit(f"JPOS {lbl_skip}")
+        
+        # R = R - D
+        self.emit("SUB r_a r_a"); self.emit("ADD r_c"); self.emit("SUB r_e"); self.emit("SWP r_c")
+        
+        # Q = Q + Power (Not needed for Modulo, but kept for symmetry/correctness of loop)
+        self.emit("SUB r_a r_a"); self.emit("ADD r_d"); self.emit("ADD r_f"); self.emit("SWP r_d")
+        
+        self.emit(f"{lbl_skip}:")
+        
+        # Shift D right
+        self.emit("SUB r_a r_a"); self.emit("ADD r_e"); self.emit("SHR r_a"); self.emit("SWP r_e")
+        
+        # Shift Power right
+        self.emit("SUB r_a r_a"); self.emit("ADD r_f"); self.emit("SHR r_a"); self.emit("SWP r_f")
+        
+        self.emit(f"JUMP {lbl_loop}")
+        
+        self.emit(f"{lbl_end}:")
+        # Result R in r_c -> r_a
+        self.emit("SUB r_a r_a"); self.emit("ADD r_c")
+        
+        self.emit(f"{lbl_zero}:")
+
     def visit_ProcCall(self, node):
         # Args are passed by reference.
         # We need to calculate the ADDRESS of each argument and store it in the procedure's parameter locations.
@@ -752,6 +850,20 @@ class CodeGenerator:
             else:
                 # Global variable. Load its address.
                 self.generate_constant(arg_sym.address)
+            
+            # If passing an ARRAY, we need to adjust for virtual base if it's a declared array.
+            # If it's a parameter array, it's already a virtual base pointer.
+            # If it's a declared array, we computed `address` (start of memory).
+            # We need `address - start_index`.
+            if arg_sym.type == 'ARRAY' and arg_sym.array_range is not None:
+                # It's a declared array. Adjust base.
+                start_index = arg_sym.array_range[0]
+                # r_a has address.
+                # r_a = r_a - start_index
+                self.emit("STORE 0") # Save address
+                self.generate_constant(start_index)
+                self.emit("STORE 1") # Save start_index
+                self.emit("LOAD 0"); self.emit("SUB 1") # address - start_index
             
             # Store r_a (the address) into the parameter location of the callee
             self.emit(f"STORE {param_sym.address}")

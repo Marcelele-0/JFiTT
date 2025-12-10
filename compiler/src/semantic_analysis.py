@@ -45,7 +45,10 @@ class SemanticAnalyzer:
             # TODO: Handle array args properly (need size? No, passed by ref)
             # If it's an array param, we don't know size.
             # But we need to know it's an array to check usage.
-            self.symbol_table.add(name, type_) 
+            if type_ == 'ARRAY':
+                self.symbol_table.add(name, type_, array_range=None)
+            else:
+                self.symbol_table.add(name, type_) 
 
         # Register declarations
         for decl in node.declarations:
@@ -200,7 +203,7 @@ class SemanticAnalyzer:
 
     def visit_Identifier(self, node):
         sym = self.symbol_table.get(node.name)
-        if node.index:
+        if node.index is not None:
             if sym.type != 'ARRAY':
                 raise Exception(f"Variable '{node.name}' is not an array")
             # Check index if it's a number

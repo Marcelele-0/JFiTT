@@ -1,7 +1,0 @@
-PROGRAM IS
-    x, y
-IN
-    READ x;
-    y := x * 2;
-    WRITE y;
-END

@@ -13,7 +13,7 @@ tokens = (
     'LPAREN', 'RPAREN', 'LBRACKET', 'RBRACKET',
     'COLON', 'SEMICOLON', 'COMMA',
     'PROCEDURE', 'IS', 'IN', 'END', 'PROGRAM',
-    'T' 
+    'T', 'I', 'O'
 )
 
 reserved = {
@@ -24,12 +24,22 @@ reserved = {
     'READ': 'READ', 'WRITE': 'WRITE',
     'PROCEDURE': 'PROCEDURE', 'IS': 'IS', 'IN': 'IN', 'END': 'END',
     'PROGRAM': 'PROGRAM',
-    'T': 'T'
+    'T': 'T',
+    'I': 'I',
+    'O': 'O'
 }
 
 def t_PIDENTIFIER(t):
-    r'[_a-zA-Z]+'
-    t.type = reserved.get(t.value, 'PIDENTIFIER')
+    r'[_a-z]+'
+    return t
+
+def t_KEYWORD(t):
+    r'[A-Z]+'
+    t.type = reserved.get(t.value)
+    if t.type is None:
+        print(f"Nierozpoznany token '{t.value}' w linii {t.lineno}")
+        t.lexer.skip(len(t.value))
+        return None
     return t
 
 def t_NUM(t):

@@ -30,22 +30,30 @@ def p_proc_head(p):
     p[0] = {'name': p[1], 'args': p[3]}
 
 def p_args_decl(p):
-    '''args_decl : args_decl COMMA PIDENTIFIER
-                 | args_decl COMMA T PIDENTIFIER
-                 | PIDENTIFIER
-                 | T PIDENTIFIER
+    '''args_decl : args_decl COMMA type PIDENTIFIER
+                 | type PIDENTIFIER
                  | empty'''
-    if len(p) == 2:
-        if p[1] is None: # empty
-            p[0] = []
-        else: # PIDENTIFIER
-            p[0] = [('VAR', p[1])]
-    elif len(p) == 3: # T PIDENTIFIER
-        p[0] = [('ARRAY', p[2])]
-    elif len(p) == 4: # args_decl COMMA PIDENTIFIER
-        p[0] = p[1] + [('VAR', p[3])]
-    elif len(p) == 5: # args_decl COMMA T PIDENTIFIER
-        p[0] = p[1] + [('ARRAY', p[4])]
+    if len(p) == 2: # empty
+        p[0] = []
+    elif len(p) == 3: # type PIDENTIFIER
+        p[0] = [(p[1], p[2])]
+    elif len(p) == 5: # args_decl COMMA type PIDENTIFIER
+        p[0] = p[1] + [(p[3], p[4])]
+
+def p_type(p):
+    '''type : T
+            | I
+            | O
+            | empty'''
+    if p[1] is None:
+        p[0] = 'VAR' # Default type (IN-OUT)
+    elif p[1] == 'T':
+        p[0] = 'ARRAY'
+    elif p[1] == 'I':
+        p[0] = 'CONST' # Read-only
+    elif p[1] == 'O':
+        p[0] = 'OUT' # Write-first
+
 
 def p_main(p):
     '''main : PROGRAM IS declarations IN commands END

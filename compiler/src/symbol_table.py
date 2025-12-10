@@ -42,10 +42,14 @@ class SymbolTable:
         
         size = 1
         if type == 'ARRAY':
-            start, end = array_range
-            if start > end:
-                raise Exception(f"Invalid array range for '{name}': {start} > {end}")
-            size = end - start + 1
+            if array_range is not None:
+                start, end = array_range
+                if start > end:
+                    raise Exception(f"Invalid array range for '{name}': {start} > {end}")
+                size = end - start + 1
+            else:
+                # Array parameter (pointer), size unknown but treated as 1 (pointer size)
+                pass
         
         address = self.memory_counter
         self.memory_counter += size
