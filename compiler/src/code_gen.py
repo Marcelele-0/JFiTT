@@ -123,7 +123,25 @@ class CodeGenerator:
                 self.generate_constant(node.identifier.index)
             elif isinstance(node.identifier.index, str):
                 idx_sym = self.symbol_table.get(node.identifier.index)
-                self.emit(f"LOAD {idx_sym.address}")
+                
+                # Check if index variable is a parameter (pointer or value)
+                if self.current_scope != 'GLOBAL':
+                    current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                    idx_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == idx_sym.name), None)
+                    
+                    if idx_param_info:
+                        if idx_param_info[0] == 'CONST':
+                            # Passed by value. Just load it.
+                            self.emit(f"LOAD {idx_sym.address}")
+                        else:
+                            # Passed by reference. Load pointer, then value.
+                            self.emit(f"LOAD {idx_sym.address}")
+                            self.emit("SWP b")
+                            self.emit("RLOAD b")
+                    else:
+                        self.emit(f"LOAD {idx_sym.address}")
+                else:
+                    self.emit(f"LOAD {idx_sym.address}")
             else:
                 self.generate_constant(node.identifier.index)
             
@@ -171,17 +189,25 @@ class CodeGenerator:
             self.visit(node.expression)
             sym = self.symbol_table.get(node.identifier.name)
             
-            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY']:
+            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY', 'OUT']:
                 # Check if param
                 current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
-                if is_param:
-                    # Indirect store
-                    self.emit("SWP b") # b = value
-                    self.emit(f"LOAD {sym.address}") # a = pointer
-                    self.emit("SWP b") # a = value, b = pointer
-                    self.emit("RSTORE b")
-                    return
+                param_info = next((arg for arg in current_proc_info['args'] if arg[1] == sym.name), None)
+                
+                if param_info:
+                    if param_info[0] == 'CONST':
+                        # Cannot assign to CONST parameter!
+                        # Semantic analysis should catch this, but code gen should handle it or fail.
+                        # Assuming semantic analysis passed, this shouldn't happen for CONST.
+                        # But if it's a local variable shadowing a param? No, shadowing not allowed.
+                        pass
+                    else:
+                        # Indirect store
+                        self.emit("SWP b") # b = value
+                        self.emit(f"LOAD {sym.address}") # a = pointer
+                        self.emit("SWP b") # a = value, b = pointer
+                        self.emit("RSTORE b")
+                        return
 
             self.emit(f"STORE {sym.address}")
 
@@ -200,7 +226,25 @@ class CodeGenerator:
                 if isinstance(node.index, str):
                     # Load value of index variable
                     idx_sym = self.symbol_table.get(node.index)
-                    self.emit(f"LOAD {idx_sym.address}")
+                    
+                    # Check if index variable is a parameter (pointer or value)
+                    if self.current_scope != 'GLOBAL':
+                        current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                        idx_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == idx_sym.name), None)
+                        
+                        if idx_param_info:
+                            if idx_param_info[0] == 'CONST':
+                                # Passed by value. Just load it.
+                                self.emit(f"LOAD {idx_sym.address}")
+                            else:
+                                # Passed by reference. Load pointer, then value.
+                                self.emit(f"LOAD {idx_sym.address}")
+                                self.emit("SWP b")
+                                self.emit("RLOAD b")
+                        else:
+                            self.emit(f"LOAD {idx_sym.address}")
+                    else:
+                        self.emit(f"LOAD {idx_sym.address}")
                 else:
                     self.generate_constant(node.index)
             
@@ -237,16 +281,20 @@ class CodeGenerator:
             
         else:
             # Simple variable
-            # Check if it's a parameter (pointer)
+            # Check if it's a parameter
             if self.current_scope != 'GLOBAL':
                 current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
+                param_info = next((arg for arg in current_proc_info['args'] if arg[1] == sym.name), None)
                 
-                if is_param:
-                    # It's a pointer.
-                    self.emit(f"LOAD {sym.address}") # Load the pointer
-                    self.emit("SWP b")
-                    self.emit("RLOAD b") # Load value pointed to
+                if param_info:
+                    if param_info[0] == 'CONST':
+                        # Passed by value. Just load it.
+                        self.emit(f"LOAD {sym.address}")
+                    else:
+                        # Passed by reference. Load pointer, then value.
+                        self.emit(f"LOAD {sym.address}") # Load the pointer
+                        self.emit("SWP b")
+                        self.emit("RLOAD b") # Load value pointed to
                 else:
                     self.emit(f"LOAD {sym.address}")
             else:
@@ -565,7 +613,9 @@ class CodeGenerator:
         # Use g to store left operand
         self.emit("SWP g")
         
+        self.stack_depth += 1
         self.visit(node.right)
+        self.stack_depth -= 1
         # Right in a, Left in g
         
         # EQ: a == b <=> a-b == 0 AND b-a == 0
@@ -849,7 +899,7 @@ class CodeGenerator:
         self.emit(f"{lbl_zero}:")
 
     def visit_ProcCall(self, node):
-        # Args are passed by reference.
+        # Args are passed by reference or value.
         
         proc_syms = self.symbol_table.get_all_in_scope(node.name)
         proc_info = self.symbol_table.get_procedure(node.name)
@@ -858,36 +908,45 @@ class CodeGenerator:
         for i, arg_expr in enumerate(node.args):
             arg_sym = self.symbol_table.get(arg_expr)
             param_name = args_info[i][1]
+            param_type = args_info[i][0]
             param_sym = proc_syms[param_name]
             
-            # Calculate address to pass
-            
-            if self.current_scope != 'GLOBAL':
-                # Check if arg_sym is a parameter of current scope
-                current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == arg_sym.name for arg in current_proc_info['args'])
+            if param_type == 'CONST': # Passed by Value (I)
+                self.visit_Identifier(Identifier(arg_expr))
+            else: # Passed by Reference (VAR, OUT, ARRAY)
+                # Calculate address to pass
                 
-                if is_param:
-                    # It's a pointer. Load the value (which is the address).
-                    self.emit(f"LOAD {arg_sym.address}")
+                if self.current_scope != 'GLOBAL':
+                    # Check if arg_sym is a parameter of current scope
+                    current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                    arg_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == arg_sym.name), None)
+                    
+                    if arg_param_info:
+                        # It's a parameter.
+                        if arg_param_info[0] == 'CONST':
+                            # It's a local value. Pass its address.
+                            self.generate_constant(arg_sym.address)
+                        else:
+                            # It's a pointer. Load the value (which is the address).
+                            self.emit(f"LOAD {arg_sym.address}")
+                    else:
+                        # It's a local variable. Load its address (constant).
+                        self.generate_constant(arg_sym.address)
                 else:
-                    # It's a local variable. Load its address (constant).
+                    # Global variable. Load its address.
                     self.generate_constant(arg_sym.address)
-            else:
-                # Global variable. Load its address.
-                self.generate_constant(arg_sym.address)
+                
+                # If passing an ARRAY declared with range, adjust base.
+                if arg_sym.type == 'ARRAY' and arg_sym.array_range is not None:
+                    start_index = arg_sym.array_range[0]
+                    # a has address.
+                    # a = a - start_index
+                    self.emit("STORE 0") # Save address
+                    self.generate_constant(start_index)
+                    self.emit("STORE 1") # Save start_index
+                    self.emit("LOAD 0"); self.emit("SUB 1") # address - start_index
             
-            # If passing an ARRAY declared with range, adjust base.
-            if arg_sym.type == 'ARRAY' and arg_sym.array_range is not None:
-                start_index = arg_sym.array_range[0]
-                # a has address.
-                # a = a - start_index
-                self.emit("STORE 0") # Save address
-                self.generate_constant(start_index)
-                self.emit("STORE 1") # Save start_index
-                self.emit("LOAD 0"); self.emit("SUB 1") # address - start_index
-            
-            # Store a (the address) into the parameter location of the callee
+            # Store a (the address or value) into the parameter location of the callee
             self.emit(f"STORE {param_sym.address}")
             
         self.emit(f"CALL PROC_{node.name}")
@@ -909,7 +968,25 @@ class CodeGenerator:
                 self.generate_constant(node.identifier.index)
             elif isinstance(node.identifier.index, str):
                 idx_sym = self.symbol_table.get(node.identifier.index)
-                self.emit(f"LOAD {idx_sym.address}")
+                
+                # Check if index variable is a parameter (pointer or value)
+                if self.current_scope != 'GLOBAL':
+                    current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                    idx_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == idx_sym.name), None)
+                    
+                    if idx_param_info:
+                        if idx_param_info[0] == 'CONST':
+                            # Passed by value. Just load it.
+                            self.emit(f"LOAD {idx_sym.address}")
+                        else:
+                            # Passed by reference. Load pointer, then value.
+                            self.emit(f"LOAD {idx_sym.address}")
+                            self.emit("SWP b")
+                            self.emit("RLOAD b")
+                    else:
+                        self.emit(f"LOAD {idx_sym.address}")
+                else:
+                    self.emit(f"LOAD {idx_sym.address}")
             else:
                 self.generate_constant(node.identifier.index)
             
@@ -944,17 +1021,22 @@ class CodeGenerator:
             
         else:
             # Simple variable
-            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY']:
+            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY', 'OUT']:
                 # Check if param
                 current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
-                if is_param:
-                    # Pointer. Load address to b.
-                    self.emit(f"LOAD {sym.address}")
-                    self.emit("SWP b")
-                    self.emit("READ")
-                    self.emit("RSTORE b")
-                    return
+                param_info = next((arg for arg in current_proc_info['args'] if arg[1] == sym.name), None)
+                
+                if param_info:
+                    if param_info[0] == 'CONST':
+                        # Cannot read into CONST parameter!
+                        pass
+                    else:
+                        # Pointer. Load address to b.
+                        self.emit(f"LOAD {sym.address}")
+                        self.emit("SWP b")
+                        self.emit("READ")
+                        self.emit("RSTORE b")
+                        return
 
             # Normal variable
             self.emit("READ")

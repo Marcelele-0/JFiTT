@@ -1,0 +1,13 @@
+PROCEDURE set_val(val, target) IS
+IN
+  target := val;
+END
+
+PROGRAM IS
+  x, v
+IN
+  x := 0;
+  v := 123;
+  set_val(v, x);
+  WRITE x;
+END

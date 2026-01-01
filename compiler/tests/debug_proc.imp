@@ -1,0 +1,12 @@
+PROCEDURE p(a, b) IS
+IN
+  b := a + 1;
+END
+
+PROGRAM IS
+  x, y
+IN
+  READ x;
+  p(x, y);
+  WRITE y;
+END

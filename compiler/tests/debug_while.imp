@@ -1,0 +1,16 @@
+PROCEDURE loop_test(n) IS
+IN
+  WHILE n > 0 DO
+    WRITE n;
+    n := n - 1;
+  ENDWHILE
+END
+
+PROGRAM IS
+  x
+IN
+  x := 3;
+  loop_test(x);
+  WRITE 999;
+  WRITE x;
+END
