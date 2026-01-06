@@ -1,0 +1,310 @@
+import pytest
+import subprocess
+import os
+import sys
+import re
+from pathlib import Path
+
+# Add src directory to the path so we can import compiler modules
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from lexer import lexer
+from parser import parser
+from semantic_analysis import SemanticAnalyzer
+from code_gen import CodeGenerator
+
+def get_vm_path():
+    """Get path to the virtual machine executable"""
+    vm_path = Path(__file__).parent.parent / 'virtual_machine' / 'maszyna-wirtualna'
+    if not vm_path.exists():
+        pytest.skip("Virtual machine executable not found")
+    return vm_path
+
+class TestSpecificOutputs:
+    """Test suite for verifying specific outputs of compiled programs"""
+
+    def compile_file(self, source_path, output_path):
+        """Helper to compile a source file to an output path"""
+        with open(source_path, 'r', encoding='utf-8') as f:
+            source_code = f.read()
+            
+        lexer.input(source_code)
+        ast = parser.parse(source_code, lexer=lexer)
+        assert ast is not None, f"Parsing failed for {source_path}"
+        
+        analyzer = SemanticAnalyzer()
+        symbol_table = analyzer.analyze(ast)
+        
+        generator = CodeGenerator(symbol_table)
+        generator.generate(ast)
+        code = generator.get_code()
+        
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(code)
+
+    def parse_vm_output(self, stdout):
+        """
+        Parses VM output to extract printed values.
+        Handles lines that may be prefixed with input prompts '? '.
+        Examples:
+        '> 123'
+        '? > 123'
+        '? ? > 123'
+        """
+        values = []
+        for line in stdout.splitlines():
+            line = line.strip()
+            # Match '> ' optionally preceded by any number of '? ' patterns
+            match = re.search(r'(?:\? )*> (-?\d+)', line)
+            if match:
+                try:
+                    values.append(int(match.group(1)))
+                except ValueError:
+                    pass
+        return values
+
+
+    def test_example0_binary_conversion(self):
+        """
+        Test example0.imp which converts number to binary (LSB first).
+        Input: 13
+        Expected Output: 1, 0, 1, 1
+        """
+        test_file = Path(__file__).parent.parent / 'test_files' / 'example0.imp'
+        if not test_file.exists():
+             pytest.fail(f"Test file {test_file} not found")
+
+        # Prepare outputs dir
+        outputs_dir = Path(__file__).parent / 'outputs'
+        outputs_dir.mkdir(exist_ok=True)
+        output_mr = outputs_dir / 'example0_test.mr'
+
+        # Compile
+        self.compile_file(test_file, output_mr)
+
+        # Run VM
+        vm_path = get_vm_path()
+        input_val = "13\n"
+        
+        try:
+            process = subprocess.run(
+                [str(vm_path), str(output_mr)],
+                input=input_val,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            print(f"\n--- VM Output ---\n{process.stdout}")
+            if process.stderr:
+                print(f"--- VM Errors ---\n{process.stderr}")
+
+            assert process.returncode == 0, "VM execution failed"
+
+            # Parse and verify output
+            outputs = self.parse_vm_output(process.stdout)
+            
+            # 13 in binary is 1101.
+            # The program prints LSB first: 1, 0, 1, 1
+            expected = [1, 0, 1, 1]
+            
+            assert outputs == expected, f"Expected outputs {expected}, got {outputs}"
+
+        except subprocess.TimeoutExpired:
+            pytest.fail("VM execution timed out")
+
+
+    def test_example1_euclidean(self):
+        """
+        Test example1.imp which uses Diophantine equation/Euclidean algorithm.
+        Input: 26, 7
+        Expected Output: 3, 11, 1
+        """
+        test_file = Path(__file__).parent.parent / 'test_files' / 'example1.imp'
+        if not test_file.exists():
+             pytest.fail(f"Test file {test_file} not found")
+
+        # Prepare outputs dir
+        outputs_dir = Path(__file__).parent / 'outputs'
+        outputs_dir.mkdir(exist_ok=True)
+        output_mr = outputs_dir / 'example1_test.mr'
+
+        # Compile
+        self.compile_file(test_file, output_mr)
+
+        # Run VM
+        vm_path = get_vm_path()
+        input_val = "26\n7\n"
+        
+        try:
+            process = subprocess.run(
+                [str(vm_path), str(output_mr)],
+                input=input_val,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            print(f"\n--- VM Output ---\n{process.stdout}")
+            if process.stderr:
+                print(f"--- VM Errors ---\n{process.stderr}")
+
+            assert process.returncode == 0, "VM execution failed"
+
+            # Parse and verify output
+            outputs = self.parse_vm_output(process.stdout)
+            
+            # Expected outputs: x=3, y=11, nwd=1
+            expected = [3, 11, 1]
+            
+            assert outputs == expected, f"Expected outputs {expected}, got {outputs}"
+
+        except subprocess.TimeoutExpired:
+            pytest.fail("VM execution timed out")
+
+
+    def test_example2_fibonacci_procedures(self):
+        """
+        Test example2.imp which uses nested procedures to calculate Fibonacci numbers.
+        Input: 0, 1
+        Expected Output: 46368, 28657
+        """
+        test_file = Path(__file__).parent.parent / 'test_files' / 'example2.imp'
+        if not test_file.exists():
+             pytest.fail(f"Test file {test_file} not found")
+
+        # Prepare outputs dir
+        outputs_dir = Path(__file__).parent / 'outputs'
+        outputs_dir.mkdir(exist_ok=True)
+        output_mr = outputs_dir / 'example2_test.mr'
+
+        # Compile
+        self.compile_file(test_file, output_mr)
+
+        # Run VM
+        vm_path = get_vm_path()
+        input_val = "0\n1\n"
+        
+        try:
+            process = subprocess.run(
+                [str(vm_path), str(output_mr)],
+                input=input_val,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            print(f"\n--- VM Output ---\n{process.stdout}")
+            if process.stderr:
+                print(f"--- VM Errors ---\n{process.stderr}")
+
+            assert process.returncode == 0, "VM execution failed"
+
+            # Parse and verify output
+            outputs = self.parse_vm_output(process.stdout)
+            
+            # Expected outputs from comments in example2.imp
+            expected = [46368, 28657]
+            
+            assert outputs == expected, f"Expected outputs {expected}, got {outputs}"
+
+        except subprocess.TimeoutExpired:
+            pytest.fail("VM execution timed out")
+
+
+    def test_example3_many_variables(self):
+        """
+        Test example3.imp which uses many variables to calculate Fibonacci numbers.
+        Input: 1
+        Expected Output: 121393
+        """
+        test_file = Path(__file__).parent.parent / 'test_files' / 'example3.imp'
+        if not test_file.exists():
+             pytest.fail(f"Test file {test_file} not found")
+
+        # Prepare outputs dir
+        outputs_dir = Path(__file__).parent / 'outputs'
+        outputs_dir.mkdir(exist_ok=True)
+        output_mr = outputs_dir / 'example3_test.mr'
+
+        # Compile
+        self.compile_file(test_file, output_mr)
+
+        # Run VM
+        vm_path = get_vm_path()
+        input_val = "1\n"
+        
+        try:
+            process = subprocess.run(
+                [str(vm_path), str(output_mr)],
+                input=input_val,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            print(f"\n--- VM Output ---\n{process.stdout}")
+            if process.stderr:
+                print(f"--- VM Errors ---\n{process.stderr}")
+
+            assert process.returncode == 0, "VM execution failed"
+
+            # Parse and verify output
+            outputs = self.parse_vm_output(process.stdout)
+            
+            # Expected outputs from comments in example3.imp
+            expected = [121393]
+            
+            assert outputs == expected, f"Expected outputs {expected}, got {outputs}"
+
+        except subprocess.TimeoutExpired:
+            pytest.fail("VM execution timed out")
+
+    def test_example4_combinations(self):
+        """
+        Test example4.imp which calculates Combinations C(n,k).
+        Input: 20, 9
+        Expected Output: 167960
+        """
+        test_file = Path(__file__).parent.parent / 'test_files' / 'example4.imp'
+        if not test_file.exists():
+             pytest.fail(f"Test file {test_file} not found")
+
+        # Prepare outputs dir
+        outputs_dir = Path(__file__).parent / 'outputs'
+        outputs_dir.mkdir(exist_ok=True)
+        output_mr = outputs_dir / 'example4_test.mr'
+
+        # Compile
+        self.compile_file(test_file, output_mr)
+
+        # Run VM
+        vm_path = get_vm_path()
+        input_val = "20\n9\n"
+        
+        try:
+            process = subprocess.run(
+                [str(vm_path), str(output_mr)],
+                input=input_val,
+                capture_output=True,
+                text=True,
+                timeout=60  # Increased timeout for computationally intensive example4
+            )
+            
+            print(f"\n--- VM Output ---\n{process.stdout}")
+            if process.stderr:
+                print(f"--- VM Errors ---\n{process.stderr}")
+
+            assert process.returncode == 0, "VM execution failed"
+
+            # Parse and verify output
+            outputs = self.parse_vm_output(process.stdout)
+            
+            # Expected output: 167960
+            expected = [167960]
+            
+            assert outputs == expected, f"Expected outputs {expected}, got {outputs}"
+
+        except subprocess.TimeoutExpired:
+            pytest.fail("VM execution timed out")
+

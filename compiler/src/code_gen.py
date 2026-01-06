@@ -18,6 +18,8 @@ class CodeGenerator:
         self.sp_start = self.symbol_table.memory_counter + 1000
         
     def emit(self, instr):
+        if '\n' in instr:
+            raise ValueError(f"Instruction contains newline: {repr(instr)}")
         self.code.append(instr)
 
     def get_code(self):
@@ -41,7 +43,7 @@ class CodeGenerator:
         
         # 2. Replace labels with line numbers in JUMP instructions
         final_code = []
-        for line in clean_code:
+        for i, line in enumerate(clean_code):
             parts = line.split()
             if parts[0] in ['JUMP', 'JPOS', 'JZERO', 'CALL']:
                 target = parts[1]
@@ -619,13 +621,7 @@ class CodeGenerator:
         # Right in a, Left in g
         
         # EQ: a == b <=> a-b == 0 AND b-a == 0
-        if node.op == '=':
-            # Check a-b
-            self.emit("SWP g") # a=Left, g=Right
-            self.emit("SUB g") # Left - Right
-            self.emit("STORE 2") # Save result 1
-            
-            pass
+
         
         if node.op == '<':
             # b - a > 0

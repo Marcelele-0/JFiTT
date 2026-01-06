@@ -1,6 +1,0 @@
-PROGRAM IS
-  n
-IN
-  n := 111091;
-  WRITE n;
-END

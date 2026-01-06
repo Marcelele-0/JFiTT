@@ -1,0 +1,8 @@
+PROGRAM IS
+    n
+IN
+    n := 5;
+    FOR i FROM n DOWNTO 2 DO
+        WRITE i;
+    ENDFOR
+END

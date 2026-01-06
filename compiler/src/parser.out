@@ -1,0 +1,2136 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> program_all
+Rule 1     program_all -> procedures main
+Rule 2     procedures -> procedures PROCEDURE proc_head IS declarations IN commands END
+Rule 3     procedures -> procedures PROCEDURE proc_head IS IN commands END
+Rule 4     procedures -> empty
+Rule 5     proc_head -> PIDENTIFIER LPAREN args_decl RPAREN
+Rule 6     args_decl -> args_decl COMMA type PIDENTIFIER
+Rule 7     args_decl -> type PIDENTIFIER
+Rule 8     args_decl -> empty
+Rule 9     type -> T
+Rule 10    type -> I
+Rule 11    type -> O
+Rule 12    type -> empty
+Rule 13    main -> PROGRAM IS declarations IN commands END
+Rule 14    main -> PROGRAM IS IN commands END
+Rule 15    declarations -> declarations COMMA PIDENTIFIER
+Rule 16    declarations -> declarations COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+Rule 17    declarations -> PIDENTIFIER
+Rule 18    declarations -> PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+Rule 19    commands -> commands command
+Rule 20    commands -> command
+Rule 21    command -> identifier ASSIGN expression SEMICOLON
+Rule 22    command -> IF condition THEN commands ELSE commands ENDIF
+Rule 23    command -> IF condition THEN commands ENDIF
+Rule 24    command -> WHILE condition DO commands ENDWHILE
+Rule 25    command -> REPEAT commands UNTIL condition SEMICOLON
+Rule 26    command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+Rule 27    command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+Rule 28    command -> proc_call SEMICOLON
+Rule 29    command -> READ identifier SEMICOLON
+Rule 30    command -> WRITE value SEMICOLON
+Rule 31    proc_call -> PIDENTIFIER LPAREN args RPAREN
+Rule 32    args -> args COMMA PIDENTIFIER
+Rule 33    args -> PIDENTIFIER
+Rule 34    expression -> value PLUS value
+Rule 35    expression -> value MINUS value
+Rule 36    expression -> value TIMES value
+Rule 37    expression -> value DIV value
+Rule 38    expression -> value MOD value
+Rule 39    expression -> value
+Rule 40    condition -> value EQ value
+Rule 41    condition -> value NEQ value
+Rule 42    condition -> value LT value
+Rule 43    condition -> value GT value
+Rule 44    condition -> value LEQ value
+Rule 45    condition -> value GEQ value
+Rule 46    value -> NUM
+Rule 47    value -> identifier
+Rule 48    identifier -> PIDENTIFIER
+Rule 49    identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+Rule 50    identifier -> PIDENTIFIER LBRACKET NUM RBRACKET
+Rule 51    empty -> <empty>
+
+Terminals, with rules where they appear
+
+ASSIGN               : 21
+COLON                : 16 18
+COMMA                : 6 15 16 32
+DIV                  : 37
+DO                   : 24 26 27
+DOWNTO               : 27
+ELSE                 : 22
+END                  : 2 3 13 14
+ENDFOR               : 26 27
+ENDIF                : 22 23
+ENDWHILE             : 24
+EQ                   : 40
+FOR                  : 26 27
+FROM                 : 26 27
+GEQ                  : 45
+GT                   : 43
+I                    : 10
+IF                   : 22 23
+IN                   : 2 3 13 14
+IS                   : 2 3 13 14
+LBRACKET             : 16 18 49 50
+LEQ                  : 44
+LPAREN               : 5 31
+LT                   : 42
+MINUS                : 35
+MOD                  : 38
+NEQ                  : 41
+NUM                  : 16 16 18 18 46 50
+O                    : 11
+PIDENTIFIER          : 5 6 7 15 16 17 18 26 27 31 32 33 48 49 49 50
+PLUS                 : 34
+PROCEDURE            : 2 3
+PROGRAM              : 13 14
+RBRACKET             : 16 18 49 50
+READ                 : 29
+REPEAT               : 25
+RPAREN               : 5 31
+SEMICOLON            : 21 25 28 29 30
+T                    : 9
+THEN                 : 22 23
+TIMES                : 36
+TO                   : 26
+UNTIL                : 25
+WHILE                : 24
+WRITE                : 30
+error                : 
+
+Nonterminals, with rules where they appear
+
+args                 : 31 32
+args_decl            : 5 6
+command              : 19 20
+commands             : 2 3 13 14 19 22 22 23 24 25 26 27
+condition            : 22 23 24 25
+declarations         : 2 13 15 16
+empty                : 4 8 12
+expression           : 21
+identifier           : 21 29 47
+main                 : 1
+proc_call            : 28
+proc_head            : 2 3
+procedures           : 1 2 3
+program_all          : 0
+type                 : 6 7
+value                : 26 26 27 27 30 34 34 35 35 36 36 37 37 38 38 39 40 40 41 41 42 42 43 43 44 44 45 45
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . program_all
+    (1) program_all -> . procedures main
+    (2) procedures -> . procedures PROCEDURE proc_head IS declarations IN commands END
+    (3) procedures -> . procedures PROCEDURE proc_head IS IN commands END
+    (4) procedures -> . empty
+    (51) empty -> .
+
+    PROCEDURE       reduce using rule 51 (empty -> .)
+    PROGRAM         reduce using rule 51 (empty -> .)
+
+    program_all                    shift and go to state 1
+    procedures                     shift and go to state 2
+    empty                          shift and go to state 3
+
+state 1
+
+    (0) S' -> program_all .
+
+
+
+state 2
+
+    (1) program_all -> procedures . main
+    (2) procedures -> procedures . PROCEDURE proc_head IS declarations IN commands END
+    (3) procedures -> procedures . PROCEDURE proc_head IS IN commands END
+    (13) main -> . PROGRAM IS declarations IN commands END
+    (14) main -> . PROGRAM IS IN commands END
+
+    PROCEDURE       shift and go to state 5
+    PROGRAM         shift and go to state 6
+
+    main                           shift and go to state 4
+
+state 3
+
+    (4) procedures -> empty .
+
+    PROCEDURE       reduce using rule 4 (procedures -> empty .)
+    PROGRAM         reduce using rule 4 (procedures -> empty .)
+
+
+state 4
+
+    (1) program_all -> procedures main .
+
+    $end            reduce using rule 1 (program_all -> procedures main .)
+
+
+state 5
+
+    (2) procedures -> procedures PROCEDURE . proc_head IS declarations IN commands END
+    (3) procedures -> procedures PROCEDURE . proc_head IS IN commands END
+    (5) proc_head -> . PIDENTIFIER LPAREN args_decl RPAREN
+
+    PIDENTIFIER     shift and go to state 8
+
+    proc_head                      shift and go to state 7
+
+state 6
+
+    (13) main -> PROGRAM . IS declarations IN commands END
+    (14) main -> PROGRAM . IS IN commands END
+
+    IS              shift and go to state 9
+
+
+state 7
+
+    (2) procedures -> procedures PROCEDURE proc_head . IS declarations IN commands END
+    (3) procedures -> procedures PROCEDURE proc_head . IS IN commands END
+
+    IS              shift and go to state 10
+
+
+state 8
+
+    (5) proc_head -> PIDENTIFIER . LPAREN args_decl RPAREN
+
+    LPAREN          shift and go to state 11
+
+
+state 9
+
+    (13) main -> PROGRAM IS . declarations IN commands END
+    (14) main -> PROGRAM IS . IN commands END
+    (15) declarations -> . declarations COMMA PIDENTIFIER
+    (16) declarations -> . declarations COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+    (17) declarations -> . PIDENTIFIER
+    (18) declarations -> . PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+
+    IN              shift and go to state 13
+    PIDENTIFIER     shift and go to state 14
+
+    declarations                   shift and go to state 12
+
+state 10
+
+    (2) procedures -> procedures PROCEDURE proc_head IS . declarations IN commands END
+    (3) procedures -> procedures PROCEDURE proc_head IS . IN commands END
+    (15) declarations -> . declarations COMMA PIDENTIFIER
+    (16) declarations -> . declarations COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+    (17) declarations -> . PIDENTIFIER
+    (18) declarations -> . PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+
+    IN              shift and go to state 16
+    PIDENTIFIER     shift and go to state 14
+
+    declarations                   shift and go to state 15
+
+state 11
+
+    (5) proc_head -> PIDENTIFIER LPAREN . args_decl RPAREN
+    (6) args_decl -> . args_decl COMMA type PIDENTIFIER
+    (7) args_decl -> . type PIDENTIFIER
+    (8) args_decl -> . empty
+    (9) type -> . T
+    (10) type -> . I
+    (11) type -> . O
+    (12) type -> . empty
+    (51) empty -> .
+
+    T               shift and go to state 20
+    I               shift and go to state 21
+    O               shift and go to state 22
+    RPAREN          reduce using rule 51 (empty -> .)
+    COMMA           reduce using rule 51 (empty -> .)
+    PIDENTIFIER     reduce using rule 51 (empty -> .)
+
+    args_decl                      shift and go to state 17
+    type                           shift and go to state 18
+    empty                          shift and go to state 19
+
+state 12
+
+    (13) main -> PROGRAM IS declarations . IN commands END
+    (15) declarations -> declarations . COMMA PIDENTIFIER
+    (16) declarations -> declarations . COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+
+    IN              shift and go to state 23
+    COMMA           shift and go to state 24
+
+
+state 13
+
+    (14) main -> PROGRAM IS IN . commands END
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 25
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 14
+
+    (17) declarations -> PIDENTIFIER .
+    (18) declarations -> PIDENTIFIER . LBRACKET NUM COLON NUM RBRACKET
+
+    IN              reduce using rule 17 (declarations -> PIDENTIFIER .)
+    COMMA           reduce using rule 17 (declarations -> PIDENTIFIER .)
+    LBRACKET        shift and go to state 36
+
+
+state 15
+
+    (2) procedures -> procedures PROCEDURE proc_head IS declarations . IN commands END
+    (15) declarations -> declarations . COMMA PIDENTIFIER
+    (16) declarations -> declarations . COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+
+    IN              shift and go to state 37
+    COMMA           shift and go to state 24
+
+
+state 16
+
+    (3) procedures -> procedures PROCEDURE proc_head IS IN . commands END
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 38
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 17
+
+    (5) proc_head -> PIDENTIFIER LPAREN args_decl . RPAREN
+    (6) args_decl -> args_decl . COMMA type PIDENTIFIER
+
+    RPAREN          shift and go to state 39
+    COMMA           shift and go to state 40
+
+
+state 18
+
+    (7) args_decl -> type . PIDENTIFIER
+
+    PIDENTIFIER     shift and go to state 41
+
+
+state 19
+
+    (8) args_decl -> empty .
+    (12) type -> empty .
+
+    RPAREN          reduce using rule 8 (args_decl -> empty .)
+    COMMA           reduce using rule 8 (args_decl -> empty .)
+    PIDENTIFIER     reduce using rule 12 (type -> empty .)
+
+
+state 20
+
+    (9) type -> T .
+
+    PIDENTIFIER     reduce using rule 9 (type -> T .)
+
+
+state 21
+
+    (10) type -> I .
+
+    PIDENTIFIER     reduce using rule 10 (type -> I .)
+
+
+state 22
+
+    (11) type -> O .
+
+    PIDENTIFIER     reduce using rule 11 (type -> O .)
+
+
+state 23
+
+    (13) main -> PROGRAM IS declarations IN . commands END
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 42
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 24
+
+    (15) declarations -> declarations COMMA . PIDENTIFIER
+    (16) declarations -> declarations COMMA . PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET
+
+    PIDENTIFIER     shift and go to state 43
+
+
+state 25
+
+    (14) main -> PROGRAM IS IN commands . END
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    END             shift and go to state 44
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 26
+
+    (20) commands -> command .
+
+    END             reduce using rule 20 (commands -> command .)
+    IF              reduce using rule 20 (commands -> command .)
+    WHILE           reduce using rule 20 (commands -> command .)
+    REPEAT          reduce using rule 20 (commands -> command .)
+    FOR             reduce using rule 20 (commands -> command .)
+    READ            reduce using rule 20 (commands -> command .)
+    WRITE           reduce using rule 20 (commands -> command .)
+    PIDENTIFIER     reduce using rule 20 (commands -> command .)
+    UNTIL           reduce using rule 20 (commands -> command .)
+    ELSE            reduce using rule 20 (commands -> command .)
+    ENDIF           reduce using rule 20 (commands -> command .)
+    ENDWHILE        reduce using rule 20 (commands -> command .)
+    ENDFOR          reduce using rule 20 (commands -> command .)
+
+
+state 27
+
+    (21) command -> identifier . ASSIGN expression SEMICOLON
+
+    ASSIGN          shift and go to state 46
+
+
+state 28
+
+    (22) command -> IF . condition THEN commands ELSE commands ENDIF
+    (23) command -> IF . condition THEN commands ENDIF
+    (40) condition -> . value EQ value
+    (41) condition -> . value NEQ value
+    (42) condition -> . value LT value
+    (43) condition -> . value GT value
+    (44) condition -> . value LEQ value
+    (45) condition -> . value GEQ value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    condition                      shift and go to state 47
+    value                          shift and go to state 48
+    identifier                     shift and go to state 50
+
+state 29
+
+    (24) command -> WHILE . condition DO commands ENDWHILE
+    (40) condition -> . value EQ value
+    (41) condition -> . value NEQ value
+    (42) condition -> . value LT value
+    (43) condition -> . value GT value
+    (44) condition -> . value LEQ value
+    (45) condition -> . value GEQ value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    condition                      shift and go to state 52
+    value                          shift and go to state 48
+    identifier                     shift and go to state 50
+
+state 30
+
+    (25) command -> REPEAT . commands UNTIL condition SEMICOLON
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 53
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 31
+
+    (26) command -> FOR . PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> FOR . PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+
+    PIDENTIFIER     shift and go to state 54
+
+
+state 32
+
+    (48) identifier -> PIDENTIFIER .
+    (49) identifier -> PIDENTIFIER . LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> PIDENTIFIER . LBRACKET NUM RBRACKET
+    (31) proc_call -> PIDENTIFIER . LPAREN args RPAREN
+
+    ASSIGN          reduce using rule 48 (identifier -> PIDENTIFIER .)
+    LBRACKET        shift and go to state 55
+    LPAREN          shift and go to state 56
+
+
+state 33
+
+    (28) command -> proc_call . SEMICOLON
+
+    SEMICOLON       shift and go to state 57
+
+
+state 34
+
+    (29) command -> READ . identifier SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    PIDENTIFIER     shift and go to state 51
+
+    identifier                     shift and go to state 58
+
+state 35
+
+    (30) command -> WRITE . value SEMICOLON
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 59
+    identifier                     shift and go to state 50
+
+state 36
+
+    (18) declarations -> PIDENTIFIER LBRACKET . NUM COLON NUM RBRACKET
+
+    NUM             shift and go to state 60
+
+
+state 37
+
+    (2) procedures -> procedures PROCEDURE proc_head IS declarations IN . commands END
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 61
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 38
+
+    (3) procedures -> procedures PROCEDURE proc_head IS IN commands . END
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    END             shift and go to state 62
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 39
+
+    (5) proc_head -> PIDENTIFIER LPAREN args_decl RPAREN .
+
+    IS              reduce using rule 5 (proc_head -> PIDENTIFIER LPAREN args_decl RPAREN .)
+
+
+state 40
+
+    (6) args_decl -> args_decl COMMA . type PIDENTIFIER
+    (9) type -> . T
+    (10) type -> . I
+    (11) type -> . O
+    (12) type -> . empty
+    (51) empty -> .
+
+    T               shift and go to state 20
+    I               shift and go to state 21
+    O               shift and go to state 22
+    PIDENTIFIER     reduce using rule 51 (empty -> .)
+
+    type                           shift and go to state 63
+    empty                          shift and go to state 64
+
+state 41
+
+    (7) args_decl -> type PIDENTIFIER .
+
+    RPAREN          reduce using rule 7 (args_decl -> type PIDENTIFIER .)
+    COMMA           reduce using rule 7 (args_decl -> type PIDENTIFIER .)
+
+
+state 42
+
+    (13) main -> PROGRAM IS declarations IN commands . END
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    END             shift and go to state 65
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 43
+
+    (15) declarations -> declarations COMMA PIDENTIFIER .
+    (16) declarations -> declarations COMMA PIDENTIFIER . LBRACKET NUM COLON NUM RBRACKET
+
+    IN              reduce using rule 15 (declarations -> declarations COMMA PIDENTIFIER .)
+    COMMA           reduce using rule 15 (declarations -> declarations COMMA PIDENTIFIER .)
+    LBRACKET        shift and go to state 66
+
+
+state 44
+
+    (14) main -> PROGRAM IS IN commands END .
+
+    $end            reduce using rule 14 (main -> PROGRAM IS IN commands END .)
+
+
+state 45
+
+    (19) commands -> commands command .
+
+    END             reduce using rule 19 (commands -> commands command .)
+    IF              reduce using rule 19 (commands -> commands command .)
+    WHILE           reduce using rule 19 (commands -> commands command .)
+    REPEAT          reduce using rule 19 (commands -> commands command .)
+    FOR             reduce using rule 19 (commands -> commands command .)
+    READ            reduce using rule 19 (commands -> commands command .)
+    WRITE           reduce using rule 19 (commands -> commands command .)
+    PIDENTIFIER     reduce using rule 19 (commands -> commands command .)
+    UNTIL           reduce using rule 19 (commands -> commands command .)
+    ELSE            reduce using rule 19 (commands -> commands command .)
+    ENDIF           reduce using rule 19 (commands -> commands command .)
+    ENDWHILE        reduce using rule 19 (commands -> commands command .)
+    ENDFOR          reduce using rule 19 (commands -> commands command .)
+
+
+state 46
+
+    (21) command -> identifier ASSIGN . expression SEMICOLON
+    (34) expression -> . value PLUS value
+    (35) expression -> . value MINUS value
+    (36) expression -> . value TIMES value
+    (37) expression -> . value DIV value
+    (38) expression -> . value MOD value
+    (39) expression -> . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    identifier                     shift and go to state 50
+    expression                     shift and go to state 67
+    value                          shift and go to state 68
+
+state 47
+
+    (22) command -> IF condition . THEN commands ELSE commands ENDIF
+    (23) command -> IF condition . THEN commands ENDIF
+
+    THEN            shift and go to state 69
+
+
+state 48
+
+    (40) condition -> value . EQ value
+    (41) condition -> value . NEQ value
+    (42) condition -> value . LT value
+    (43) condition -> value . GT value
+    (44) condition -> value . LEQ value
+    (45) condition -> value . GEQ value
+
+    EQ              shift and go to state 70
+    NEQ             shift and go to state 71
+    LT              shift and go to state 72
+    GT              shift and go to state 73
+    LEQ             shift and go to state 74
+    GEQ             shift and go to state 75
+
+
+state 49
+
+    (46) value -> NUM .
+
+    EQ              reduce using rule 46 (value -> NUM .)
+    NEQ             reduce using rule 46 (value -> NUM .)
+    LT              reduce using rule 46 (value -> NUM .)
+    GT              reduce using rule 46 (value -> NUM .)
+    LEQ             reduce using rule 46 (value -> NUM .)
+    GEQ             reduce using rule 46 (value -> NUM .)
+    SEMICOLON       reduce using rule 46 (value -> NUM .)
+    PLUS            reduce using rule 46 (value -> NUM .)
+    MINUS           reduce using rule 46 (value -> NUM .)
+    TIMES           reduce using rule 46 (value -> NUM .)
+    DIV             reduce using rule 46 (value -> NUM .)
+    MOD             reduce using rule 46 (value -> NUM .)
+    THEN            reduce using rule 46 (value -> NUM .)
+    DO              reduce using rule 46 (value -> NUM .)
+    TO              reduce using rule 46 (value -> NUM .)
+    DOWNTO          reduce using rule 46 (value -> NUM .)
+
+
+state 50
+
+    (47) value -> identifier .
+
+    EQ              reduce using rule 47 (value -> identifier .)
+    NEQ             reduce using rule 47 (value -> identifier .)
+    LT              reduce using rule 47 (value -> identifier .)
+    GT              reduce using rule 47 (value -> identifier .)
+    LEQ             reduce using rule 47 (value -> identifier .)
+    GEQ             reduce using rule 47 (value -> identifier .)
+    SEMICOLON       reduce using rule 47 (value -> identifier .)
+    PLUS            reduce using rule 47 (value -> identifier .)
+    MINUS           reduce using rule 47 (value -> identifier .)
+    TIMES           reduce using rule 47 (value -> identifier .)
+    DIV             reduce using rule 47 (value -> identifier .)
+    MOD             reduce using rule 47 (value -> identifier .)
+    THEN            reduce using rule 47 (value -> identifier .)
+    DO              reduce using rule 47 (value -> identifier .)
+    TO              reduce using rule 47 (value -> identifier .)
+    DOWNTO          reduce using rule 47 (value -> identifier .)
+
+
+state 51
+
+    (48) identifier -> PIDENTIFIER .
+    (49) identifier -> PIDENTIFIER . LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> PIDENTIFIER . LBRACKET NUM RBRACKET
+
+    EQ              reduce using rule 48 (identifier -> PIDENTIFIER .)
+    NEQ             reduce using rule 48 (identifier -> PIDENTIFIER .)
+    LT              reduce using rule 48 (identifier -> PIDENTIFIER .)
+    GT              reduce using rule 48 (identifier -> PIDENTIFIER .)
+    LEQ             reduce using rule 48 (identifier -> PIDENTIFIER .)
+    GEQ             reduce using rule 48 (identifier -> PIDENTIFIER .)
+    SEMICOLON       reduce using rule 48 (identifier -> PIDENTIFIER .)
+    PLUS            reduce using rule 48 (identifier -> PIDENTIFIER .)
+    MINUS           reduce using rule 48 (identifier -> PIDENTIFIER .)
+    TIMES           reduce using rule 48 (identifier -> PIDENTIFIER .)
+    DIV             reduce using rule 48 (identifier -> PIDENTIFIER .)
+    MOD             reduce using rule 48 (identifier -> PIDENTIFIER .)
+    THEN            reduce using rule 48 (identifier -> PIDENTIFIER .)
+    DO              reduce using rule 48 (identifier -> PIDENTIFIER .)
+    TO              reduce using rule 48 (identifier -> PIDENTIFIER .)
+    DOWNTO          reduce using rule 48 (identifier -> PIDENTIFIER .)
+    LBRACKET        shift and go to state 55
+
+
+state 52
+
+    (24) command -> WHILE condition . DO commands ENDWHILE
+
+    DO              shift and go to state 76
+
+
+state 53
+
+    (25) command -> REPEAT commands . UNTIL condition SEMICOLON
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    UNTIL           shift and go to state 77
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 54
+
+    (26) command -> FOR PIDENTIFIER . FROM value TO value DO commands ENDFOR
+    (27) command -> FOR PIDENTIFIER . FROM value DOWNTO value DO commands ENDFOR
+
+    FROM            shift and go to state 78
+
+
+state 55
+
+    (49) identifier -> PIDENTIFIER LBRACKET . PIDENTIFIER RBRACKET
+    (50) identifier -> PIDENTIFIER LBRACKET . NUM RBRACKET
+
+    PIDENTIFIER     shift and go to state 79
+    NUM             shift and go to state 80
+
+
+state 56
+
+    (31) proc_call -> PIDENTIFIER LPAREN . args RPAREN
+    (32) args -> . args COMMA PIDENTIFIER
+    (33) args -> . PIDENTIFIER
+
+    PIDENTIFIER     shift and go to state 81
+
+    args                           shift and go to state 82
+
+state 57
+
+    (28) command -> proc_call SEMICOLON .
+
+    END             reduce using rule 28 (command -> proc_call SEMICOLON .)
+    IF              reduce using rule 28 (command -> proc_call SEMICOLON .)
+    WHILE           reduce using rule 28 (command -> proc_call SEMICOLON .)
+    REPEAT          reduce using rule 28 (command -> proc_call SEMICOLON .)
+    FOR             reduce using rule 28 (command -> proc_call SEMICOLON .)
+    READ            reduce using rule 28 (command -> proc_call SEMICOLON .)
+    WRITE           reduce using rule 28 (command -> proc_call SEMICOLON .)
+    PIDENTIFIER     reduce using rule 28 (command -> proc_call SEMICOLON .)
+    UNTIL           reduce using rule 28 (command -> proc_call SEMICOLON .)
+    ELSE            reduce using rule 28 (command -> proc_call SEMICOLON .)
+    ENDIF           reduce using rule 28 (command -> proc_call SEMICOLON .)
+    ENDWHILE        reduce using rule 28 (command -> proc_call SEMICOLON .)
+    ENDFOR          reduce using rule 28 (command -> proc_call SEMICOLON .)
+
+
+state 58
+
+    (29) command -> READ identifier . SEMICOLON
+
+    SEMICOLON       shift and go to state 83
+
+
+state 59
+
+    (30) command -> WRITE value . SEMICOLON
+
+    SEMICOLON       shift and go to state 84
+
+
+state 60
+
+    (18) declarations -> PIDENTIFIER LBRACKET NUM . COLON NUM RBRACKET
+
+    COLON           shift and go to state 85
+
+
+state 61
+
+    (2) procedures -> procedures PROCEDURE proc_head IS declarations IN commands . END
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    END             shift and go to state 86
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 62
+
+    (3) procedures -> procedures PROCEDURE proc_head IS IN commands END .
+
+    PROCEDURE       reduce using rule 3 (procedures -> procedures PROCEDURE proc_head IS IN commands END .)
+    PROGRAM         reduce using rule 3 (procedures -> procedures PROCEDURE proc_head IS IN commands END .)
+
+
+state 63
+
+    (6) args_decl -> args_decl COMMA type . PIDENTIFIER
+
+    PIDENTIFIER     shift and go to state 87
+
+
+state 64
+
+    (12) type -> empty .
+
+    PIDENTIFIER     reduce using rule 12 (type -> empty .)
+
+
+state 65
+
+    (13) main -> PROGRAM IS declarations IN commands END .
+
+    $end            reduce using rule 13 (main -> PROGRAM IS declarations IN commands END .)
+
+
+state 66
+
+    (16) declarations -> declarations COMMA PIDENTIFIER LBRACKET . NUM COLON NUM RBRACKET
+
+    NUM             shift and go to state 88
+
+
+state 67
+
+    (21) command -> identifier ASSIGN expression . SEMICOLON
+
+    SEMICOLON       shift and go to state 89
+
+
+state 68
+
+    (34) expression -> value . PLUS value
+    (35) expression -> value . MINUS value
+    (36) expression -> value . TIMES value
+    (37) expression -> value . DIV value
+    (38) expression -> value . MOD value
+    (39) expression -> value .
+
+    PLUS            shift and go to state 90
+    MINUS           shift and go to state 91
+    TIMES           shift and go to state 92
+    DIV             shift and go to state 93
+    MOD             shift and go to state 94
+    SEMICOLON       reduce using rule 39 (expression -> value .)
+
+
+state 69
+
+    (22) command -> IF condition THEN . commands ELSE commands ENDIF
+    (23) command -> IF condition THEN . commands ENDIF
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 95
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 70
+
+    (40) condition -> value EQ . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 96
+    identifier                     shift and go to state 50
+
+state 71
+
+    (41) condition -> value NEQ . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 97
+    identifier                     shift and go to state 50
+
+state 72
+
+    (42) condition -> value LT . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 98
+    identifier                     shift and go to state 50
+
+state 73
+
+    (43) condition -> value GT . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 99
+    identifier                     shift and go to state 50
+
+state 74
+
+    (44) condition -> value LEQ . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 100
+    identifier                     shift and go to state 50
+
+state 75
+
+    (45) condition -> value GEQ . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 101
+    identifier                     shift and go to state 50
+
+state 76
+
+    (24) command -> WHILE condition DO . commands ENDWHILE
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 102
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 77
+
+    (25) command -> REPEAT commands UNTIL . condition SEMICOLON
+    (40) condition -> . value EQ value
+    (41) condition -> . value NEQ value
+    (42) condition -> . value LT value
+    (43) condition -> . value GT value
+    (44) condition -> . value LEQ value
+    (45) condition -> . value GEQ value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    condition                      shift and go to state 103
+    value                          shift and go to state 48
+    identifier                     shift and go to state 50
+
+state 78
+
+    (26) command -> FOR PIDENTIFIER FROM . value TO value DO commands ENDFOR
+    (27) command -> FOR PIDENTIFIER FROM . value DOWNTO value DO commands ENDFOR
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 104
+    identifier                     shift and go to state 50
+
+state 79
+
+    (49) identifier -> PIDENTIFIER LBRACKET PIDENTIFIER . RBRACKET
+
+    RBRACKET        shift and go to state 105
+
+
+state 80
+
+    (50) identifier -> PIDENTIFIER LBRACKET NUM . RBRACKET
+
+    RBRACKET        shift and go to state 106
+
+
+state 81
+
+    (33) args -> PIDENTIFIER .
+
+    RPAREN          reduce using rule 33 (args -> PIDENTIFIER .)
+    COMMA           reduce using rule 33 (args -> PIDENTIFIER .)
+
+
+state 82
+
+    (31) proc_call -> PIDENTIFIER LPAREN args . RPAREN
+    (32) args -> args . COMMA PIDENTIFIER
+
+    RPAREN          shift and go to state 107
+    COMMA           shift and go to state 108
+
+
+state 83
+
+    (29) command -> READ identifier SEMICOLON .
+
+    END             reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    IF              reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    WHILE           reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    REPEAT          reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    FOR             reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    READ            reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    WRITE           reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    PIDENTIFIER     reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    UNTIL           reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    ELSE            reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    ENDIF           reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    ENDWHILE        reduce using rule 29 (command -> READ identifier SEMICOLON .)
+    ENDFOR          reduce using rule 29 (command -> READ identifier SEMICOLON .)
+
+
+state 84
+
+    (30) command -> WRITE value SEMICOLON .
+
+    END             reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    IF              reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    WHILE           reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    REPEAT          reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    FOR             reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    READ            reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    WRITE           reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    PIDENTIFIER     reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    UNTIL           reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    ELSE            reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    ENDIF           reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    ENDWHILE        reduce using rule 30 (command -> WRITE value SEMICOLON .)
+    ENDFOR          reduce using rule 30 (command -> WRITE value SEMICOLON .)
+
+
+state 85
+
+    (18) declarations -> PIDENTIFIER LBRACKET NUM COLON . NUM RBRACKET
+
+    NUM             shift and go to state 109
+
+
+state 86
+
+    (2) procedures -> procedures PROCEDURE proc_head IS declarations IN commands END .
+
+    PROCEDURE       reduce using rule 2 (procedures -> procedures PROCEDURE proc_head IS declarations IN commands END .)
+    PROGRAM         reduce using rule 2 (procedures -> procedures PROCEDURE proc_head IS declarations IN commands END .)
+
+
+state 87
+
+    (6) args_decl -> args_decl COMMA type PIDENTIFIER .
+
+    RPAREN          reduce using rule 6 (args_decl -> args_decl COMMA type PIDENTIFIER .)
+    COMMA           reduce using rule 6 (args_decl -> args_decl COMMA type PIDENTIFIER .)
+
+
+state 88
+
+    (16) declarations -> declarations COMMA PIDENTIFIER LBRACKET NUM . COLON NUM RBRACKET
+
+    COLON           shift and go to state 110
+
+
+state 89
+
+    (21) command -> identifier ASSIGN expression SEMICOLON .
+
+    END             reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    IF              reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    WHILE           reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    REPEAT          reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    FOR             reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    READ            reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    WRITE           reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    PIDENTIFIER     reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    UNTIL           reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    ELSE            reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    ENDIF           reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    ENDWHILE        reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+    ENDFOR          reduce using rule 21 (command -> identifier ASSIGN expression SEMICOLON .)
+
+
+state 90
+
+    (34) expression -> value PLUS . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 111
+    identifier                     shift and go to state 50
+
+state 91
+
+    (35) expression -> value MINUS . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 112
+    identifier                     shift and go to state 50
+
+state 92
+
+    (36) expression -> value TIMES . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 113
+    identifier                     shift and go to state 50
+
+state 93
+
+    (37) expression -> value DIV . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 114
+    identifier                     shift and go to state 50
+
+state 94
+
+    (38) expression -> value MOD . value
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 115
+    identifier                     shift and go to state 50
+
+state 95
+
+    (22) command -> IF condition THEN commands . ELSE commands ENDIF
+    (23) command -> IF condition THEN commands . ENDIF
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    ELSE            shift and go to state 116
+    ENDIF           shift and go to state 117
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 96
+
+    (40) condition -> value EQ value .
+
+    THEN            reduce using rule 40 (condition -> value EQ value .)
+    DO              reduce using rule 40 (condition -> value EQ value .)
+    SEMICOLON       reduce using rule 40 (condition -> value EQ value .)
+
+
+state 97
+
+    (41) condition -> value NEQ value .
+
+    THEN            reduce using rule 41 (condition -> value NEQ value .)
+    DO              reduce using rule 41 (condition -> value NEQ value .)
+    SEMICOLON       reduce using rule 41 (condition -> value NEQ value .)
+
+
+state 98
+
+    (42) condition -> value LT value .
+
+    THEN            reduce using rule 42 (condition -> value LT value .)
+    DO              reduce using rule 42 (condition -> value LT value .)
+    SEMICOLON       reduce using rule 42 (condition -> value LT value .)
+
+
+state 99
+
+    (43) condition -> value GT value .
+
+    THEN            reduce using rule 43 (condition -> value GT value .)
+    DO              reduce using rule 43 (condition -> value GT value .)
+    SEMICOLON       reduce using rule 43 (condition -> value GT value .)
+
+
+state 100
+
+    (44) condition -> value LEQ value .
+
+    THEN            reduce using rule 44 (condition -> value LEQ value .)
+    DO              reduce using rule 44 (condition -> value LEQ value .)
+    SEMICOLON       reduce using rule 44 (condition -> value LEQ value .)
+
+
+state 101
+
+    (45) condition -> value GEQ value .
+
+    THEN            reduce using rule 45 (condition -> value GEQ value .)
+    DO              reduce using rule 45 (condition -> value GEQ value .)
+    SEMICOLON       reduce using rule 45 (condition -> value GEQ value .)
+
+
+state 102
+
+    (24) command -> WHILE condition DO commands . ENDWHILE
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    ENDWHILE        shift and go to state 118
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 103
+
+    (25) command -> REPEAT commands UNTIL condition . SEMICOLON
+
+    SEMICOLON       shift and go to state 119
+
+
+state 104
+
+    (26) command -> FOR PIDENTIFIER FROM value . TO value DO commands ENDFOR
+    (27) command -> FOR PIDENTIFIER FROM value . DOWNTO value DO commands ENDFOR
+
+    TO              shift and go to state 120
+    DOWNTO          shift and go to state 121
+
+
+state 105
+
+    (49) identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .
+
+    ASSIGN          reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    EQ              reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    NEQ             reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    LT              reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    GT              reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    LEQ             reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    GEQ             reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    SEMICOLON       reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    PLUS            reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    MINUS           reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    TIMES           reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    DIV             reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    MOD             reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    THEN            reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    DO              reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    TO              reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+    DOWNTO          reduce using rule 49 (identifier -> PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET .)
+
+
+state 106
+
+    (50) identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .
+
+    ASSIGN          reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    EQ              reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    NEQ             reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    LT              reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    GT              reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    LEQ             reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    GEQ             reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    SEMICOLON       reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    PLUS            reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    MINUS           reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    TIMES           reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    DIV             reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    MOD             reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    THEN            reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    DO              reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    TO              reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+    DOWNTO          reduce using rule 50 (identifier -> PIDENTIFIER LBRACKET NUM RBRACKET .)
+
+
+state 107
+
+    (31) proc_call -> PIDENTIFIER LPAREN args RPAREN .
+
+    SEMICOLON       reduce using rule 31 (proc_call -> PIDENTIFIER LPAREN args RPAREN .)
+
+
+state 108
+
+    (32) args -> args COMMA . PIDENTIFIER
+
+    PIDENTIFIER     shift and go to state 122
+
+
+state 109
+
+    (18) declarations -> PIDENTIFIER LBRACKET NUM COLON NUM . RBRACKET
+
+    RBRACKET        shift and go to state 123
+
+
+state 110
+
+    (16) declarations -> declarations COMMA PIDENTIFIER LBRACKET NUM COLON . NUM RBRACKET
+
+    NUM             shift and go to state 124
+
+
+state 111
+
+    (34) expression -> value PLUS value .
+
+    SEMICOLON       reduce using rule 34 (expression -> value PLUS value .)
+
+
+state 112
+
+    (35) expression -> value MINUS value .
+
+    SEMICOLON       reduce using rule 35 (expression -> value MINUS value .)
+
+
+state 113
+
+    (36) expression -> value TIMES value .
+
+    SEMICOLON       reduce using rule 36 (expression -> value TIMES value .)
+
+
+state 114
+
+    (37) expression -> value DIV value .
+
+    SEMICOLON       reduce using rule 37 (expression -> value DIV value .)
+
+
+state 115
+
+    (38) expression -> value MOD value .
+
+    SEMICOLON       reduce using rule 38 (expression -> value MOD value .)
+
+
+state 116
+
+    (22) command -> IF condition THEN commands ELSE . commands ENDIF
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 125
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 117
+
+    (23) command -> IF condition THEN commands ENDIF .
+
+    END             reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    IF              reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    WHILE           reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    REPEAT          reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    FOR             reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    READ            reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    WRITE           reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    PIDENTIFIER     reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    UNTIL           reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    ELSE            reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    ENDIF           reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    ENDWHILE        reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+    ENDFOR          reduce using rule 23 (command -> IF condition THEN commands ENDIF .)
+
+
+state 118
+
+    (24) command -> WHILE condition DO commands ENDWHILE .
+
+    END             reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    IF              reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    WHILE           reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    REPEAT          reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    FOR             reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    READ            reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    WRITE           reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    PIDENTIFIER     reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    UNTIL           reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    ELSE            reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    ENDIF           reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    ENDWHILE        reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+    ENDFOR          reduce using rule 24 (command -> WHILE condition DO commands ENDWHILE .)
+
+
+state 119
+
+    (25) command -> REPEAT commands UNTIL condition SEMICOLON .
+
+    END             reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    IF              reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    WHILE           reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    REPEAT          reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    FOR             reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    READ            reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    WRITE           reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    PIDENTIFIER     reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    UNTIL           reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    ELSE            reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    ENDIF           reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    ENDWHILE        reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+    ENDFOR          reduce using rule 25 (command -> REPEAT commands UNTIL condition SEMICOLON .)
+
+
+state 120
+
+    (26) command -> FOR PIDENTIFIER FROM value TO . value DO commands ENDFOR
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 126
+    identifier                     shift and go to state 50
+
+state 121
+
+    (27) command -> FOR PIDENTIFIER FROM value DOWNTO . value DO commands ENDFOR
+    (46) value -> . NUM
+    (47) value -> . identifier
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+
+    NUM             shift and go to state 49
+    PIDENTIFIER     shift and go to state 51
+
+    value                          shift and go to state 127
+    identifier                     shift and go to state 50
+
+state 122
+
+    (32) args -> args COMMA PIDENTIFIER .
+
+    RPAREN          reduce using rule 32 (args -> args COMMA PIDENTIFIER .)
+    COMMA           reduce using rule 32 (args -> args COMMA PIDENTIFIER .)
+
+
+state 123
+
+    (18) declarations -> PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET .
+
+    IN              reduce using rule 18 (declarations -> PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET .)
+    COMMA           reduce using rule 18 (declarations -> PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET .)
+
+
+state 124
+
+    (16) declarations -> declarations COMMA PIDENTIFIER LBRACKET NUM COLON NUM . RBRACKET
+
+    RBRACKET        shift and go to state 128
+
+
+state 125
+
+    (22) command -> IF condition THEN commands ELSE commands . ENDIF
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    ENDIF           shift and go to state 129
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 126
+
+    (26) command -> FOR PIDENTIFIER FROM value TO value . DO commands ENDFOR
+
+    DO              shift and go to state 130
+
+
+state 127
+
+    (27) command -> FOR PIDENTIFIER FROM value DOWNTO value . DO commands ENDFOR
+
+    DO              shift and go to state 131
+
+
+state 128
+
+    (16) declarations -> declarations COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET .
+
+    IN              reduce using rule 16 (declarations -> declarations COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET .)
+    COMMA           reduce using rule 16 (declarations -> declarations COMMA PIDENTIFIER LBRACKET NUM COLON NUM RBRACKET .)
+
+
+state 129
+
+    (22) command -> IF condition THEN commands ELSE commands ENDIF .
+
+    END             reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    IF              reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    WHILE           reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    REPEAT          reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    FOR             reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    READ            reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    WRITE           reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    PIDENTIFIER     reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    UNTIL           reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    ELSE            reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    ENDIF           reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    ENDWHILE        reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+    ENDFOR          reduce using rule 22 (command -> IF condition THEN commands ELSE commands ENDIF .)
+
+
+state 130
+
+    (26) command -> FOR PIDENTIFIER FROM value TO value DO . commands ENDFOR
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 132
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 131
+
+    (27) command -> FOR PIDENTIFIER FROM value DOWNTO value DO . commands ENDFOR
+    (19) commands -> . commands command
+    (20) commands -> . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    commands                       shift and go to state 133
+    command                        shift and go to state 26
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 132
+
+    (26) command -> FOR PIDENTIFIER FROM value TO value DO commands . ENDFOR
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    ENDFOR          shift and go to state 134
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 133
+
+    (27) command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands . ENDFOR
+    (19) commands -> commands . command
+    (21) command -> . identifier ASSIGN expression SEMICOLON
+    (22) command -> . IF condition THEN commands ELSE commands ENDIF
+    (23) command -> . IF condition THEN commands ENDIF
+    (24) command -> . WHILE condition DO commands ENDWHILE
+    (25) command -> . REPEAT commands UNTIL condition SEMICOLON
+    (26) command -> . FOR PIDENTIFIER FROM value TO value DO commands ENDFOR
+    (27) command -> . FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR
+    (28) command -> . proc_call SEMICOLON
+    (29) command -> . READ identifier SEMICOLON
+    (30) command -> . WRITE value SEMICOLON
+    (48) identifier -> . PIDENTIFIER
+    (49) identifier -> . PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET
+    (50) identifier -> . PIDENTIFIER LBRACKET NUM RBRACKET
+    (31) proc_call -> . PIDENTIFIER LPAREN args RPAREN
+
+    ENDFOR          shift and go to state 135
+    IF              shift and go to state 28
+    WHILE           shift and go to state 29
+    REPEAT          shift and go to state 30
+    FOR             shift and go to state 31
+    READ            shift and go to state 34
+    WRITE           shift and go to state 35
+    PIDENTIFIER     shift and go to state 32
+
+    command                        shift and go to state 45
+    identifier                     shift and go to state 27
+    proc_call                      shift and go to state 33
+
+state 134
+
+    (26) command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .
+
+    END             reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    IF              reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    WHILE           reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    REPEAT          reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    FOR             reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    READ            reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    WRITE           reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    PIDENTIFIER     reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    UNTIL           reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    ELSE            reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    ENDIF           reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    ENDWHILE        reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+    ENDFOR          reduce using rule 26 (command -> FOR PIDENTIFIER FROM value TO value DO commands ENDFOR .)
+
+
+state 135
+
+    (27) command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .
+
+    END             reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    IF              reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    WHILE           reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    REPEAT          reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    FOR             reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    READ            reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    WRITE           reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    PIDENTIFIER     reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    UNTIL           reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    ELSE            reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    ENDIF           reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    ENDWHILE        reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+    ENDFOR          reduce using rule 27 (command -> FOR PIDENTIFIER FROM value DOWNTO value DO commands ENDFOR .)
+

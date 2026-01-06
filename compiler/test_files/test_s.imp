@@ -1,0 +1,21 @@
+PROCEDURE s(I n, O m) IS
+    o
+IN
+    m:=1;
+    FOR i FROM n DOWNTO 2 DO
+        o:=i%2;
+        IF o=1 THEN
+            m:=m*i;
+        ELSE
+            m:=i*m;
+        ENDIF
+    ENDFOR
+END
+
+PROGRAM IS
+    n, w
+IN
+    READ n;
+    s(n, w);
+    WRITE w;
+END
