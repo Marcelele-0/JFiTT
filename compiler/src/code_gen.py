@@ -10,11 +10,12 @@ class CodeGenerator:
         # b - f: General purpose / Multiplier / Divisor
         # g: Expression stack optimization
         # h: Return Address Stack Pointer (SP)
-        self.reg_stack = ['g'] 
+        self.reg_stack = ['c', 'd', 'e', 'f', 'g'] 
         self.stack_depth = 0
         self.mem_spill_start = 2 # Locations 0 and 1 are used by MULT/DIV/Array
         
         # Initialize SP (h) to a high memory address
+        self.mem_spill_start = 1000000000 # Use high address for spills to avoid collision with variables and temp counters + 1000
         self.sp_start = self.symbol_table.memory_counter + 1000
         
     def emit(self, instr):
@@ -577,19 +578,46 @@ class CodeGenerator:
         self.emit(f"{start_label}:")
         
         # Check condition: i <= limit (TO) or i >= limit (DOWNTO)
-        self.emit(f"LOAD {sym.address}")
-        self.emit("STORE 0") # i in 0
+        # We need to compute a - b, checking saturating arithmetic.
         
+        # 1. Load limit -> 1
         self.emit(f"LOAD {limit_address}")
-        self.emit("STORE 1") # limit in 1
+        self.emit("STORE 1")
         
-        if not node.down_to: # TO
-            self.emit("LOAD 0") # i
-            self.emit("SUB 1")  # i - limit
+        # 2. Load iterator -> 0
+        self.emit(f"LOAD {sym.address}")
+        self.emit("STORE 0")
+        
+        # 3. Perform comparison subtraction
+        if not node.down_to: # TO: i <= limit <=> i - limit <= 0?
+            # With saturating sub (monus):
+            # i - limit == 0 if i <= limit.
+            # So if i - limit == 0, we continue.
+            # If i - limit > 0, we stop.
+            # JPOS jumps if > 0.
+            
+            # Load i -> a
+            self.emit("LOAD 0")
+            # Load limit -> a, swap to b
+            self.emit("SWP b")
+            self.emit("LOAD 1") # limit in a, i in b
+            self.emit("SWP b")  # i in a, limit in b
+            
+            self.emit("SUB b")  # i - limit
             self.emit(f"JPOS {end_label}")
-        else: # DOWNTO
-            self.emit("LOAD 1") # limit
-            self.emit("SUB 0")  # limit - i
+            
+        else: # DOWNTO: i >= limit <=> limit - i <= 0?
+            # limit - i == 0 if limit <= i.
+            # If limit - i > 0 (limit > i), we stop.
+            
+            # Load limit -> a
+            self.emit("LOAD 1")
+            # Load i -> a, swap to b
+            self.emit("SWP b")
+            self.emit("LOAD 0") # i in a, limit in b
+            self.emit("SWP b")  # limit in a, i in b
+            
+            self.emit("SUB b")  # limit - i
             self.emit(f"JPOS {end_label}")
             
         for cmd in node.commands:
@@ -710,7 +738,10 @@ class CodeGenerator:
          # 1 - a
          self.emit("STORE 2")
          self.emit("RST a"); self.emit("INC a") # 1
-         self.emit("SWP b"); self.emit("LOAD 2"); self.emit("SUB b") 
+         self.emit("SWP b") # b=1
+         self.emit("LOAD 2") # a=original
+         self.emit("SWP b") # a=1, b=original
+         self.emit("SUB b") # 1 - original 
 
     def generate_division(self):
         # Inputs: Mem[0] (Dividend A), Mem[1] (Divisor B)
