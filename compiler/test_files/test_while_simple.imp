@@ -1,0 +1,9 @@
+PROGRAM IS
+    i
+IN
+    i := 1;
+    WHILE i <= 5 DO
+        WRITE i;
+        i := i + 1;
+    ENDWHILE
+END

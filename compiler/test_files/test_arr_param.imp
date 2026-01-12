@@ -1,0 +1,17 @@
+PROCEDURE set(T arr, val) IS
+IN
+    arr[1] := val;
+END
+
+PROCEDURE print(T arr) IS
+IN
+    WRITE arr[1];
+END
+
+PROGRAM IS
+    t[1:10], x
+IN
+    x := 5;
+    set(t, x);
+    print(t);
+END

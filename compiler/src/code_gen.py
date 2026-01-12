@@ -10,12 +10,12 @@ class CodeGenerator:
         # b - f: General purpose / Multiplier / Divisor
         # g: Expression stack optimization
         # h: Return Address Stack Pointer (SP)
-        self.reg_stack = ['c', 'd', 'e', 'f', 'g'] 
+        self.reg_stack = ['g'] 
         self.stack_depth = 0
-        self.mem_spill_start = 2 # Locations 0 and 1 are used by MULT/DIV/Array
+        self.stack_depth = 0
+        self.mem_spill_start = 1000 # Move spill far away to detect collisions
         
         # Initialize SP (h) to a high memory address
-        self.mem_spill_start = 1000000000 # Use high address for spills to avoid collision with variables and temp counters + 1000
         self.sp_start = self.symbol_table.memory_counter + 1000
         
     def emit(self, instr):
@@ -41,6 +41,7 @@ class CodeGenerator:
             else:
                 clean_code.append(line)
                 line_counter += 1
+        
         
         # 2. Replace labels with line numbers in JUMP instructions
         final_code = []
@@ -153,10 +154,11 @@ class CodeGenerator:
                 # Declared array
                 start = sym.array_range[0]
                 # index in a
-                self.emit("STORE 0") # Save index
+                loc_idx = self.mem_spill_start + self.stack_depth
+                self.emit(f"STORE {loc_idx}") # Save index
                 self.generate_constant(start) # start in a
                 self.emit("SWP b") # start in b
-                self.emit("LOAD 0") # index in a
+                self.emit(f"LOAD {loc_idx}") # index in a
                 self.emit("SUB b") # index - start
                 
                 # Add base address
@@ -257,10 +259,11 @@ class CodeGenerator:
                 # Declared array: Address = base + index - start
                 start = sym.array_range[0]
                 # index in a
-                self.emit("STORE 0") # Save index
+                loc_idx = self.mem_spill_start + self.stack_depth
+                self.emit(f"STORE {loc_idx}") # Save index
                 self.generate_constant(start) # start in a
                 self.emit("SWP b") # start in b
-                self.emit("LOAD 0") # index in a
+                self.emit(f"LOAD {loc_idx}") # index in a
                 self.emit("SUB b") # index - start
                 
                 # Add base address
@@ -403,7 +406,7 @@ class CodeGenerator:
                     self.emit(f"SUB {reg}") # a = left - right
             else:
                 # Spill to memory
-                loc = self.mem_spill_start + (self.stack_depth - len(self.reg_stack))
+                loc = self.mem_spill_start + self.stack_depth
                 self.emit(f"STORE {loc}")
                 
                 self.stack_depth += 1
@@ -738,10 +741,8 @@ class CodeGenerator:
          # 1 - a
          self.emit("STORE 2")
          self.emit("RST a"); self.emit("INC a") # 1
-         self.emit("SWP b") # b=1
-         self.emit("LOAD 2") # a=original
-         self.emit("SWP b") # a=1, b=original
-         self.emit("SUB b") # 1 - original 
+         # a=1. Want 1 - val.
+         self.emit("SWP b"); self.emit("LOAD 2"); self.emit("SWP b"); self.emit("SUB b") 
 
     def generate_division(self):
         # Inputs: Mem[0] (Dividend A), Mem[1] (Divisor B)
@@ -966,12 +967,14 @@ class CodeGenerator:
                 # If passing an ARRAY declared with range, adjust base.
                 if arg_sym.type == 'ARRAY' and arg_sym.array_range is not None:
                     start_index = arg_sym.array_range[0]
-                    # a has address.
-                    # a = a - start_index
-                    self.emit("STORE 0") # Save address
+                    # Use spill registers to allow recursion/nested calls without clobbering 0/1
+                    loc_addr = self.mem_spill_start + self.stack_depth
+                    loc_start = self.mem_spill_start + self.stack_depth + 1
+                    
+                    self.emit(f"STORE {loc_addr}") # Save address
                     self.generate_constant(start_index)
-                    self.emit("STORE 1") # Save start_index
-                    self.emit("LOAD 0"); self.emit("SUB 1") # address - start_index
+                    self.emit(f"STORE {loc_start}") # Save start_index
+                    self.emit(f"LOAD {loc_addr}"); self.emit("SWP b"); self.emit(f"LOAD {loc_start}"); self.emit("SWP b"); self.emit("SUB b") # address - start_index
             
             # Store a (the address or value) into the parameter location of the callee
             self.emit(f"STORE {param_sym.address}")

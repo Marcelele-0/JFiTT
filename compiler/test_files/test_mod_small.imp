@@ -1,0 +1,8 @@
+PROGRAM IS
+    a, b, c
+IN
+    a := 5;
+    b := 23;
+    c := a % b;
+    WRITE c;
+END
