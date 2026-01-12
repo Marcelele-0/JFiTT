@@ -583,49 +583,46 @@ class CodeGenerator:
         # Check condition: i <= limit (TO) or i >= limit (DOWNTO)
         # We need to compute a - b, checking saturating arithmetic.
         
-        # 1. Load limit -> 1
         self.emit(f"LOAD {limit_address}")
         self.emit("STORE 1")
-        
-        # 2. Load iterator -> 0
         self.emit(f"LOAD {sym.address}")
         self.emit("STORE 0")
         
-        # 3. Perform comparison subtraction
-        if not node.down_to: # TO: i <= limit <=> i - limit <= 0?
-            # With saturating sub (monus):
-            # i - limit == 0 if i <= limit.
-            # So if i - limit == 0, we continue.
-            # If i - limit > 0, we stop.
-            # JPOS jumps if > 0.
-            
-            # Load i -> a
-            self.emit("LOAD 0")
-            # Load limit -> a, swap to b
-            self.emit("SWP b")
-            self.emit("LOAD 1") # limit in a, i in b
-            self.emit("SWP b")  # i in a, limit in b
-            
-            self.emit("SUB b")  # i - limit
+        # 3. Initial Empty Range Check
+        if not node.down_to: # TO: if i > limit (i - limit > 0) -> Skip
+            self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SWP b"); self.emit("SUB b")
             self.emit(f"JPOS {end_label}")
-            
-        else: # DOWNTO: i >= limit <=> limit - i <= 0?
-            # limit - i == 0 if limit <= i.
-            # If limit - i > 0 (limit > i), we stop.
-            
-            # Load limit -> a
-            self.emit("LOAD 1")
-            # Load i -> a, swap to b
-            self.emit("SWP b")
-            self.emit("LOAD 0") # i in a, limit in b
-            self.emit("SWP b")  # limit in a, i in b
-            
-            self.emit("SUB b")  # limit - i
+        else: # DOWNTO: if limit > i (limit - i > 0) -> Skip
+            self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SWP b"); self.emit("SUB b")
             self.emit(f"JPOS {end_label}")
-            
+
+        self.emit(f"{start_label}:")
+        
         for cmd in node.commands:
             self.visit(cmd)
-            
+
+        # Check for termination condition (Iter == Limit)
+        # We load iter and limit again because body might have used registers (though usually preserved in Mem)
+        self.emit(f"LOAD {sym.address}")
+        self.emit("STORE 0")
+        self.emit(f"LOAD {limit_address}")
+        self.emit("STORE 1")
+        
+        # if i == limit, we are done (we just executed the last iteration)
+        # i - limit == 0? 
+        # Use SUB logic: |a-b| + |b-a| == 0 if a==b.
+        # Actually, simpler:
+        # If a == b, a-b=0 and b-a=0.
+        # If a != b, one is > 0.
+        self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SWP b"); self.emit("SUB b") # i - limit
+        self.emit(f"JPOS {end_label}_CONTINUE") # If > 0, they are diff (wait, if i > limit for TO, handled? No if i==limit. 0)
+        
+        # Reset registers to check limit-i
+        self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SWP b"); self.emit("SUB b") # limit - i
+        self.emit(f"JZERO {end_label}") # If both are 0, then EQUAL. Jump to End.
+        
+        self.emit(f"{end_label}_CONTINUE:")
+        
         # Update iterator
         self.emit(f"LOAD {sym.address}")
         if not node.down_to:

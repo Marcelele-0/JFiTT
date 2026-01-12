@@ -527,3 +527,70 @@ class TestSpecificOutputs:
 
         except subprocess.TimeoutExpired:
             pytest.fail("VM execution timed out")
+
+    def test_example9_bc(self):
+        """
+        Test example9.imp (Binomial Coefficient).
+        Inputs: n=20, k=9
+        Expected Output: 167960
+        """
+        test_file = Path(__file__).parent.parent / 'test_files' / 'example9.imp'
+        if not test_file.exists():
+             pytest.fail(f"Test file {test_file} not found")
+    
+        outputs_dir = Path(__file__).parent / 'outputs'
+        outputs_dir.mkdir(exist_ok=True)
+        output_mr = outputs_dir / 'example9_test.mr'
+        self.compile_file(test_file, output_mr)
+        
+        input_str = "20\n9\n"
+        expected = [167960]
+        
+        vm_path = get_vm_path()
+        try:
+            process = subprocess.run(
+                [str(vm_path), str(output_mr)],
+                input=input_str,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            assert process.returncode == 0
+            outputs = self.parse_vm_output(process.stdout)
+            assert outputs == expected, f"Expected {expected}, got {outputs}"
+        except subprocess.TimeoutExpired:
+            pytest.fail("VM execution timed out")
+
+    def test_exampleA_downto(self):
+        """
+        Test exampleA.imp (FOR DOWNTO and Arrays).
+        Calculates tc[i] = (i+1) * (25-i) for i in 0..24
+        """
+        test_file = Path(__file__).parent.parent / 'test_files' / 'exampleA.imp'
+        if not test_file.exists():
+             pytest.fail(f"Test file {test_file} not found")
+    
+        outputs_dir = Path(__file__).parent / 'outputs'
+        outputs_dir.mkdir(exist_ok=True)
+        output_mr = outputs_dir / 'exampleA_test.mr'
+        self.compile_file(test_file, output_mr)
+        
+        # Calculate expected output python side
+        expected = []
+        for i in range(0, 25):
+            val = (i + 1) * (25 - i)
+            expected.append(val)
+            
+        vm_path = get_vm_path()
+        try:
+            process = subprocess.run(
+                [str(vm_path), str(output_mr)],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            assert process.returncode == 0
+            outputs = self.parse_vm_output(process.stdout)
+            assert outputs == expected, f"Expected {expected}, got {outputs}"
+        except subprocess.TimeoutExpired:
+            pytest.fail("VM execution timed out")
