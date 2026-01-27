@@ -28,6 +28,38 @@ class CodeGenerator:
         return '\n'.join(self.code)
 
     def resolve_labels(self):
+        # 0. Peephole Optimization
+        optimized_code = []
+        i = 0
+        while i < len(self.code):
+            line = self.code[i].strip()
+            
+            # Look ahead
+            if i + 1 < len(self.code):
+                next_line = self.code[i+1].strip()
+                
+                # Opt 1: STORE X, LOAD X -> STORE X (Load is redundant as acc has value)
+                if line.startswith("STORE ") and next_line.startswith("LOAD "):
+                     store_loc = line.split()[1]
+                     load_loc = next_line.split()[1]
+                     if store_loc == load_loc:
+                         optimized_code.append(line)
+                         i += 2
+                         continue
+                
+                # Opt 2: SWP X, SWP X -> Remove both (Redundant)
+                if line.startswith("SWP ") and next_line.startswith("SWP "):
+                     swp_reg1 = line.split()[1]
+                     swp_reg2 = next_line.split()[1]
+                     if swp_reg1 == swp_reg2:
+                         i += 2
+                         continue
+
+            optimized_code.append(line)
+            i += 1
+            
+        self.code = optimized_code
+
         # 1. Find all labels and their line numbers
         labels = {}
         clean_code = []
@@ -258,19 +290,27 @@ class CodeGenerator:
             if sym.array_range is not None:
                 # Declared array: Address = base + index - start
                 start = sym.array_range[0]
-                # index in a
-                loc_idx = self.mem_spill_start + self.stack_depth
-                self.emit(f"STORE {loc_idx}") # Save index
-                self.generate_constant(start) # start in a
-                self.emit("SWP b") # start in b
-                self.emit(f"LOAD {loc_idx}") # index in a
-                self.emit("SUB b") # index - start
                 
-                # Add base address
-                # offset in a
-                self.emit("SWP b") # offset in b
-                self.generate_constant(sym.address) # base in a
-                self.emit("ADD b") # base + offset
+                if start == 0:
+                     # Address = base + index.
+                     # index in a.
+                     self.emit("SWP b") # index in b
+                     self.generate_constant(sym.address) # base in a
+                     self.emit("ADD b") # base + index
+                else:
+                    # index in a
+                    loc_idx = self.mem_spill_start + self.stack_depth
+                    self.emit(f"STORE {loc_idx}") # Save index
+                    self.generate_constant(start) # start in a
+                    self.emit("SWP b") # start in b
+                    self.emit(f"LOAD {loc_idx}") # index in a
+                    self.emit("SUB b") # index - start
+                    
+                    # Add base address
+                    # offset in a
+                    self.emit("SWP b") # offset in b
+                    self.generate_constant(sym.address) # base in a
+                    self.emit("ADD b") # base + offset
             else:
                 # Array parameter: Address = virtual_base + index
                 # sym.address holds the virtual_base pointer
@@ -383,6 +423,22 @@ class CodeGenerator:
         # Using register 'g' as temp
         
         if node.op in ['+', '-']:
+            # Check for INC/DEC optimizations first
+            if node.op == '+':
+                if isinstance(node.right, Number) and node.right.value == 1:
+                   self.visit(node.left)
+                   self.emit("INC a")
+                   return
+                if isinstance(node.left, Number) and node.left.value == 1:
+                   self.visit(node.right)
+                   self.emit("INC a")
+                   return
+            elif node.op == '-':
+                if isinstance(node.right, Number) and node.right.value == 1:
+                   self.visit(node.left)
+                   self.emit("DEC a")
+                   return
+
             self.visit(node.left)
             
             if self.stack_depth < len(self.reg_stack):
@@ -522,8 +578,8 @@ class CodeGenerator:
         else_label = self.get_new_label("IF_ELSE")
         end_label = self.get_new_label("IF_END")
         
-        self.visit(node.condition) # a has 1 (true) or 0 (false)
-        self.emit(f"JZERO {else_label}")
+        # Optimize: Jump to ELSE if condition is FALSE
+        self.emit_condition_jump(node.condition, else_label, jump_if_false=True)
         
         for cmd in node.then_commands:
             self.visit(cmd)
@@ -541,8 +597,9 @@ class CodeGenerator:
         end_label = self.get_new_label("WHILE_END")
         
         self.emit(f"{start_label}:")
-        self.visit(node.condition)
-        self.emit(f"JZERO {end_label}")
+        
+        # Optimize: Jump to END if condition is FALSE
+        self.emit_condition_jump(node.condition, end_label, jump_if_false=True)
         
         for cmd in node.commands:
             self.visit(cmd)
@@ -558,11 +615,129 @@ class CodeGenerator:
         for cmd in node.commands:
             self.visit(cmd)
             
-        self.visit(node.condition) # Wynik warunku w rejestrze 'a'
-        
         # Pętla REPEAT-UNTIL kończy się, gdy warunek jest prawdziwy.
         # Jeśli warunek jest fałszywy (0), skaczemy na początek.
-        self.emit(f"JZERO {start_label}")
+        # Optimize: Jump to START if condition is FALSE
+        self.emit_condition_jump(node.condition, start_label, jump_if_false=True)
+
+    def emit_condition_jump(self, node, label, jump_if_false=True):
+        # Generates code to jump to 'label' based on condition.
+        # If jump_if_false is True: Jump if condition is False (0).
+        # If jump_if_false is False: Jump if condition is True (1).
+        
+        # Optimize comparisons directly
+        if isinstance(node, Condition):
+            self.visit(node.left)
+            # Use g to store left operand
+            self.emit("SWP g")
+            
+            self.stack_depth += 1
+            self.visit(node.right)
+            self.stack_depth -= 1
+            # Right in a, Left in g
+            
+            if node.op == '<':
+                 # Cond: Left < Right <=> Right - Left > 0
+                 # False if: Right - Left == 0
+                 # Right (a) - Left (g)
+                 self.emit("SUB g")
+                 if jump_if_false:
+                     self.emit(f"JZERO {label}")
+                 else:
+                     self.emit(f"JPOS {label}")
+                 return
+
+            elif node.op == '>':
+                 # Cond: Left > Right <=> Left - Right > 0
+                 # False if: Left - Right == 0
+                 # Left (g) - Right (a)
+                 self.emit("SWP g")
+                 self.emit("SUB g")
+                 if jump_if_false:
+                     self.emit(f"JZERO {label}")
+                 else:
+                     self.emit(f"JPOS {label}")
+                 return
+                 
+            elif node.op == '<=':
+                 # Cond: Left <= Right <=> NOT (Left > Right)
+                 # False if: Left > Right <=> Left - Right > 0
+                 # Left (g) - Right (a)
+                 self.emit("SWP g")
+                 self.emit("SUB g") 
+                 # If a > 0 (True), then Left > Right, so Left <= Right is False.
+                 if jump_if_false:
+                     self.emit(f"JPOS {label}")
+                 else:
+                     self.emit(f"JZERO {label}")
+                 return
+
+            elif node.op == '>=':
+                 # Cond: Left >= Right <=> NOT (Left < Right)
+                 # False if: Left < Right <=> Right - Left > 0
+                 # Right (a) - Left (g)
+                 self.emit("SUB g") 
+                 # If a > 0, then Right > Left, so Left < Right.
+                 if jump_if_false:
+                     self.emit(f"JPOS {label}")
+                 else:
+                     self.emit(f"JZERO {label}")
+                 return
+            
+            elif node.op == '=':
+                 # Cond: Left == Right
+                 # False if: Left != Right
+                 # Left in g, Right in a
+                 self.emit("STORE 1") # Right -> 1
+                 self.emit("SWP g") # Left -> a
+                 self.emit("STORE 0") # Left -> 0
+                 
+                 # a-b
+                 self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SUB b"); self.emit("STORE 2")
+                 # b-a
+                 self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SUB b"); self.emit("SWP b"); self.emit("LOAD 2"); self.emit("ADD b")
+                 
+                 # Result in a is (a-b)+(b-a). 
+                 # If a == b, then 0.
+                 # If a != b, then > 0.
+                 
+                 if jump_if_false:
+                     # Jump if a != b (False) => Jump if a > 0
+                     self.emit(f"JPOS {label}")
+                 else:
+                     # Jump if a == b (True) => Jump if a == 0
+                     self.emit(f"JZERO {label}")
+                 return
+            
+            elif node.op == '!=':
+                 # Cond: Left != Right
+                 # False if: Left == Right
+                 
+                 self.emit("STORE 1")
+                 self.emit("SWP g")
+                 self.emit("STORE 0")
+                 
+                 # a-b
+                 self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SUB b"); self.emit("STORE 2")
+                 # b-a
+                 self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SUB b"); self.emit("SWP b"); self.emit("LOAD 2"); self.emit("ADD b")
+                 
+                 # Result in a > 0 if !=, 0 if ==.
+                 
+                 if jump_if_false:
+                     # Jump if a == b (False) => Jump if a == 0
+                     self.emit(f"JZERO {label}")
+                 else:
+                     # Jump if a != b (True) => Jump if a > 0
+                     self.emit(f"JPOS {label}")
+                 return
+
+        # Fallback: Evaluate condition to 0 or 1, then jump
+        self.visit(node) # Result in a
+        if jump_if_false:
+            self.emit(f"JZERO {label}")
+        else:
+            self.emit(f"JPOS {label}")
 
     def visit_For(self, node):
         self.visit(node.start_expr)
@@ -608,18 +783,21 @@ class CodeGenerator:
         self.emit(f"LOAD {limit_address}")
         self.emit("STORE 1")
         
-        # if i == limit, we are done (we just executed the last iteration)
-        # i - limit == 0? 
-        # Use SUB logic: |a-b| + |b-a| == 0 if a==b.
-        # Actually, simpler:
-        # If a == b, a-b=0 and b-a=0.
-        # If a != b, one is > 0.
-        self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SWP b"); self.emit("SUB b") # i - limit
-        self.emit(f"JPOS {end_label}_CONTINUE") # If > 0, they are diff (wait, if i > limit for TO, handled? No if i==limit. 0)
-        
-        # Reset registers to check limit-i
-        self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SWP b"); self.emit("SUB b") # limit - i
-        self.emit(f"JZERO {end_label}") # If both are 0, then EQUAL. Jump to End.
+        # Optimized Termination Check
+        if not node.down_to:
+             # TO Loop. Invariant i <= limit.
+             # Check limit - i.
+             # If 0 => i >= limit => i == limit => END.
+             # If >0 => i < limit => CONTINUE.
+             self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SWP b"); self.emit("SUB b") # limit - i
+             self.emit(f"JZERO {end_label}")
+        else:
+             # DOWNTO Loop. Invariant i >= limit.
+             # Check i - limit.
+             # If 0 => limit >= i => i == limit => END.
+             # If >0 => i > limit => CONTINUE.
+             self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SWP b"); self.emit("SUB b") # i - limit
+             self.emit(f"JZERO {end_label}")
         
         self.emit(f"{end_label}_CONTINUE:")
         

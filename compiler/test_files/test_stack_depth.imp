@@ -1,9 +1,0 @@
-PROGRAM IS
-    a[1:10], b, c, d
-IN
-    a[1] := 10;
-    b := 2;
-    c := 3;
-    d := a[1] * (b + c);
-    WRITE d;
-END
