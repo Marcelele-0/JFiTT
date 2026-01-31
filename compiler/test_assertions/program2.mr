@@ -1,0 +1,126 @@
+JUMP 94	# skok do programu
+STORE 0	# licz
+LOAD 1	# r[b]:=&s[0]
+SWP b
+RST a	# i:=2
+INC a
+SHL a
+STORE 4
+LOAD 2	# i':=n+1-2
+RLOAD a
+DEC a
+STORE 5
+LOAD 5	# FOR
+JZERO 26# skok za FOR
+DEC a	# i'--
+STORE 5
+LOAD 4	# s[i]:=1
+ADD b
+SWP c
+RST a
+INC a
+RSTORE c
+LOAD 4	# i++
+INC a
+STORE 4
+JUMP 12 # ENDFOR
+RST a	# i:=2
+INC a
+SHL a
+STORE 4
+LOAD 2	# i':=n+1-2
+RLOAD a
+DEC a
+STORE 5
+LOAD 5	# FOR
+JZERO 66# skok za FOR
+DEC a	# i'--
+STORE 5
+LOAD 4	# IF s[i]>0
+ADD b
+RLOAD a
+JZERO 62# skok za IF
+LOAD 4	# j:=i+i;
+ADD a
+STORE 3
+LOAD 2	# WHILE j<=n
+RLOAD a
+SWP c
+LOAD 3
+SUB c
+JPOS 62	# skok za WHILE
+LOAD 3	# s[j]:=0
+ADD b
+SWP c
+RST a
+RSTORE c
+LOAD 4	# j:=j+i
+SWP c
+LOAD 3
+ADD c
+STORE 3
+JUMP 45	# ENDWHILE
+LOAD 4	# i++
+INC a
+STORE 4
+JUMP 34	# ENDFOR
+LOAD 0	# return
+RTRN
+STORE 6	# wypisz
+LOAD 7	# r[b]:=&s
+SWP b
+LOAD 8	# i:=n
+RLOAD a
+STORE 9
+LOAD 8	# i':=n-2+1
+RLOAD a
+DEC a
+STORE 10
+LOAD 10	# FOR
+JZERO 92# skok za FOR
+DEC a	# i'--
+STORE 10
+LOAD 9	# IF s[i]>0 
+ADD b
+RLOAD a
+JZERO 88# ENDIF
+LOAD 9	# WRITE i
+WRITE
+LOAD 9
+DEC a	# i--
+STORE 9
+JUMP 78 # ENDFOR
+LOAD 6	# return
+RTRN
+RST a	# program n:=100
+INC a
+SHL a
+INC a
+SHL a
+SHL a
+SHL a
+INC a
+SHL a
+SHL a
+STORE 11
+RST a	# call licz(sito,n)
+INC a
+SHL a
+SHL a
+INC a
+SHL a
+STORE 1
+INC a
+STORE 2
+CALL 1
+RST a	# call wypisz(sito,n)
+INC a
+SHL a
+SHL a
+INC a
+SHL a
+STORE 7
+INC a
+STORE 8
+CALL 68
+HALT

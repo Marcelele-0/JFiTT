@@ -1,0 +1,140 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   PEŁNA INSTRUKCJA ROZWIĄZANIA ZADANIA 4 - KANONICZNY PARSER LR(1)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[polish]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{float}
+
+\usepackage[unicode=true, colorlinks=true, linkcolor=black, pdfusetitle]{hyperref}
+
+% Definicje komend
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\taskseparator}{\vspace{0.5cm}\leavevmode\leaders\hrule height 0.5pt\hfill\kern0pt\vspace{0.5cm}}
+
+\title{\textbf{Sprawozdanie z Języków Formalnych i Technik Translacji} \\ Zadanie 4: Konstrukcja pełnego analizatora LR(1)}
+\author{Marcel Musiałek \\ Indeks: 279704}
+\date{28 stycznia 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Treść Zadania}
+Celem zadania jest policzenie pełnej tablicy kanonicznego analizatora LR(1) dla podanej gramatyki wyrażeń logicznych:
+\begin{align*}
+    E &\to E \text{ or } T \mid T \\
+    T &\to T \text{ and } F \mid F \\
+    F &\to \text{not } F \mid (E) \mid \text{true} \mid \text{false}
+\end{align*}
+
+\section{Opis Metody: Analiza LR(1)}
+
+\subsection{Istota kanonicznego lookahead}
+Analizator LR(1) różni się od SLR tym, że każda sytuacja wewnątrz stanu (item) posiada przypisany własny zbiór symboli podglądu (\textit{lookahead set}). Sytuacja ma postać $[A \to \alpha \cdot \beta, \{a, b\}]$, gdzie $\{a, b\}$ to terminale, po których wystąpieniu dopuszczalna jest redukcja do symbolu $A$.
+
+\subsection{Algorytm domknięcia (Closure)}
+Dla każdej sytuacji $[A \to \alpha \cdot B \beta, L]$ w stanie, dla każdej produkcji $B \to \gamma$, dodajemy sytuację:
+\begin{equation}
+    [B \to \cdot \gamma, FIRST(\beta L)]
+\end{equation}
+Dzięki temu lookahead jest precyzyjnie „dziedziczony” z kontekstu, co pozwala uniknąć konfliktów w gramatykach, w których zbiory $FOLLOW$ są zbyt szerokie.
+
+\taskseparator
+
+\section{Pełne Rozwiązanie: Kolekcja Kanoniczna Stanów}
+
+Poniżej przedstawiono pełne stany automatu, z jawnym wyszczególnieniem zbiorów lookahead.
+
+\begin{itemize}
+    \item \textbf{I0 (Stan początkowy):} \\
+    $[E' \to \cdot E, \{ \$ \}]$ \\
+    $[E \to \cdot E \text{ or } T, \{ \$, \text{or} \}]$ \\
+    $[E \to \cdot T, \{ \$, \text{or} \}]$ \\
+    $[T \to \cdot T \text{ and } F, \{ \$, \text{or}, \text{and} \}]$ \\
+    $[T \to \cdot F, \{ \$, \text{or}, \text{and} \}]$ \\
+    $[F \to \cdot \text{not } F, \{ \$, \text{or}, \text{and} \}]$ \\
+    $[F \to \cdot (E), \{ \$, \text{or}, \text{and} \}]$ \\
+    $[F \to \cdot \text{true}, \{ \$, \text{or}, \text{and} \}]$ \\
+    $[F \to \cdot \text{false}, \{ \$, \text{or}, \text{and} \}]$
+
+    \item \textbf{I1 ($GOTO(I0, E)$):} \\
+    $[E' \to E \cdot, \{ \$ \}]$ $\rightarrow$ \textbf{ACCEPT} \\
+    $[E \to E \cdot \text{or } T, \{ \$, \text{or} \}]$
+
+    \item \textbf{I2 ($GOTO(I0, T)$):} \\
+    $[E \to T \cdot, \{ \$, \text{or} \}]$ $\rightarrow$ \textbf{Redukcja (2)} \\
+    $[T \to T \cdot \text{and } F, \{ \$, \text{or}, \text{and} \}]$
+
+    \item \textbf{I4 ($GOTO(I0, '(')$):} \\
+    $[F \to ( \cdot E ), \{ \$, \text{or}, \text{and} \}]$ \\
+    $[E \to \cdot E \text{ or } T, \{ ), \text{or} \}]$ \\
+    $[E \to \cdot T, \{ ), \text{or} \}]$ \\
+    $[T \to \cdot T \text{ and } F, \{ ), \text{or}, \text{and} \}]$ \\
+    $[T \to \cdot F, \{ ), \text{or}, \text{and} \}]$ \\
+    (Zauważmy zmianę symbolu $\$$ na $)$ w zbiorze podglądu).
+
+    \item \textbf{I10 ($GOTO(I3, F)$):} \\
+    $[F \to \text{not } F \cdot, \{ \$, \text{or}, \text{and} \}]$ $\rightarrow$ \textbf{Redukcja (5)}
+\end{itemize}
+
+\taskseparator
+
+\section{Pełna Tabela Analizatora LR(1)}
+
+Tabela zawiera 12 kolumn, uwzględniając wszystkie terminale (ACTION) i nieterminale (GOTO).
+
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{|c|cccccccc|ccc|}
+\hline
+\multirow{2}{*}{\textbf{Stan}} & \multicolumn{8}{c|}{\textbf{ACTION}} & \multicolumn{3}{c|}{\textbf{GOTO}} \\ \cline{2-12} 
+ & \textbf{or} & \textbf{and} & \textbf{not} & \textbf{(} & \textbf{)} & \textbf{true} & \textbf{false} & \textbf{\$} & \textbf{E} & \textbf{T} & \textbf{F} \\ \hline
+0 & & & s3 & s4 & & s8 & s9 & & 1 & 2 & 5 \\
+1 & s6 & & & & & & & acc & & & \\
+2 & r2 & s7 & & & & & & r2 & & & \\
+3 & & & s3 & s4 & & s8 & s9 & & & & 10 \\
+4 & & & s14 & s15 & & s25 & s26 & & 11 & 12 & 13 \\
+5 & r4 & r4 & & & & & & r4 & & & \\
+6 & & & s3 & s4 & & s8 & s9 & & & 16 & 5 \\
+7 & & & s3 & s4 & & s8 & s9 & & & & 17 \\
+8 & r7 & r7 & & & & & & r7 & & & \\
+9 & r8 & r8 & & & & & & r8 & & & \\
+10 & r5 & r5 & & & & & & r5 & & & \\
+11 & s19 & & & & s18 & & & & & & \\
+12 & r2 & s20 & & & r2 & & & & & & \\
+13 & r4 & r4 & & & r4 & & & & & & \\
+14 & & & s14 & s15 & & s25 & s26 & & & & 21 \\
+15 & & & s14 & s15 & & s25 & s26 & & 11 & 12 & 13 \\
+16 & r1 & s7 & & & & & & r1 & & & \\
+17 & r3 & r3 & & & & & & r3 & & & \\
+18 & r6 & r6 & & & & & & r6 & & & \\
+19 & & & s14 & s15 & & s25 & s26 & & & 23 & 13 \\
+20 & & & s14 & s15 & & s25 & s26 & & & & 24 \\
+21 & r5 & r5 & & & r5 & & & & & & \\
+22 & r6 & r6 & & & r6 & & & & & & \\
+23 & r1 & s20 & & & r1 & & & & & & \\
+24 & r3 & r3 & & & r3 & & & & & & \\
+25 & r7 & r7 & & & r7 & & & & & & \\
+26 & r8 & r8 & & & r8 & & & & & & \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Wnioski}
+Kanoniczny analizator LR(1) wyeliminował niejednoznaczności poprzez precyzyjne rozdzielenie stanów o tych samych rdzeniach, ale różnych kontekstach (np. stany I10 i I21). Jest to metoda najbardziej ogólna, choć kosztowna pod względem liczby stanów w porównaniu do metod SLR.
+
+\end{document}

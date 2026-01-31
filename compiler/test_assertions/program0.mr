@@ -1,0 +1,27 @@
+# prosta translacja 
+# n -> P0, p -> P1
+READ	# READ n
+STORE 0
+LOAD 0	# p:=n/2
+SHR a
+STORE 1
+LOAD 1	# p:=2*p
+SHL a
+STORE 1
+LOAD 1	# IF n>p
+SWP b
+LOAD 0
+SUB b
+JZERO 17# skok ELSE
+RST a	# WRITE 1
+INC a
+WRITE
+JUMP 19	# skok ENDIF
+RST a	# WRITE 0
+WRITE
+LOAD 0	# n:=n/2
+SHR a
+STORE 0
+LOAD 0	# skok R-U n>0
+JPOS 2
+HALT
