@@ -12,12 +12,15 @@ class CodeGenerator:
         # h: Return Address Stack Pointer (SP)
         self.reg_stack = ['g'] 
         self.stack_depth = 0
-        self.mem_spill_start = 2 # Locations 0 and 1 are used by MULT/DIV/Array
+        self.stack_depth = 0
+        self.mem_spill_start = 1000 # Move spill far away to detect collisions
         
         # Initialize SP (h) to a high memory address
         self.sp_start = self.symbol_table.memory_counter + 1000
         
     def emit(self, instr):
+        if '\n' in instr:
+            raise ValueError(f"Instruction contains newline: {repr(instr)}")
         self.code.append(instr)
 
     def get_code(self):
@@ -25,6 +28,38 @@ class CodeGenerator:
         return '\n'.join(self.code)
 
     def resolve_labels(self):
+        # 0. Peephole Optimization
+        optimized_code = []
+        i = 0
+        while i < len(self.code):
+            line = self.code[i].strip()
+            
+            # Look ahead
+            if i + 1 < len(self.code):
+                next_line = self.code[i+1].strip()
+                
+                # Opt 1: STORE X, LOAD X -> STORE X (Load is redundant as acc has value)
+                if line.startswith("STORE ") and next_line.startswith("LOAD "):
+                     store_loc = line.split()[1]
+                     load_loc = next_line.split()[1]
+                     if store_loc == load_loc:
+                         optimized_code.append(line)
+                         i += 2
+                         continue
+                
+                # Opt 2: SWP X, SWP X -> Remove both (Redundant)
+                if line.startswith("SWP ") and next_line.startswith("SWP "):
+                     swp_reg1 = line.split()[1]
+                     swp_reg2 = next_line.split()[1]
+                     if swp_reg1 == swp_reg2:
+                         i += 2
+                         continue
+
+            optimized_code.append(line)
+            i += 1
+            
+        self.code = optimized_code
+
         # 1. Find all labels and their line numbers
         labels = {}
         clean_code = []
@@ -39,9 +74,10 @@ class CodeGenerator:
                 clean_code.append(line)
                 line_counter += 1
         
+        
         # 2. Replace labels with line numbers in JUMP instructions
         final_code = []
-        for line in clean_code:
+        for i, line in enumerate(clean_code):
             parts = line.split()
             if parts[0] in ['JUMP', 'JPOS', 'JZERO', 'CALL']:
                 target = parts[1]
@@ -123,7 +159,25 @@ class CodeGenerator:
                 self.generate_constant(node.identifier.index)
             elif isinstance(node.identifier.index, str):
                 idx_sym = self.symbol_table.get(node.identifier.index)
-                self.emit(f"LOAD {idx_sym.address}")
+                
+                # Check if index variable is a parameter (pointer or value)
+                if self.current_scope != 'GLOBAL':
+                    current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                    idx_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == idx_sym.name), None)
+                    
+                    if idx_param_info:
+                        if idx_param_info[0] == 'CONST':
+                            # Passed by value. Just load it.
+                            self.emit(f"LOAD {idx_sym.address}")
+                        else:
+                            # Passed by reference. Load pointer, then value.
+                            self.emit(f"LOAD {idx_sym.address}")
+                            self.emit("SWP b")
+                            self.emit("RLOAD b")
+                    else:
+                        self.emit(f"LOAD {idx_sym.address}")
+                else:
+                    self.emit(f"LOAD {idx_sym.address}")
             else:
                 self.generate_constant(node.identifier.index)
             
@@ -132,10 +186,11 @@ class CodeGenerator:
                 # Declared array
                 start = sym.array_range[0]
                 # index in a
-                self.emit("STORE 0") # Save index
+                loc_idx = self.mem_spill_start + self.stack_depth
+                self.emit(f"STORE {loc_idx}") # Save index
                 self.generate_constant(start) # start in a
                 self.emit("SWP b") # start in b
-                self.emit("LOAD 0") # index in a
+                self.emit(f"LOAD {loc_idx}") # index in a
                 self.emit("SUB b") # index - start
                 
                 # Add base address
@@ -171,17 +226,25 @@ class CodeGenerator:
             self.visit(node.expression)
             sym = self.symbol_table.get(node.identifier.name)
             
-            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY']:
+            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY', 'OUT']:
                 # Check if param
                 current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
-                if is_param:
-                    # Indirect store
-                    self.emit("SWP b") # b = value
-                    self.emit(f"LOAD {sym.address}") # a = pointer
-                    self.emit("SWP b") # a = value, b = pointer
-                    self.emit("RSTORE b")
-                    return
+                param_info = next((arg for arg in current_proc_info['args'] if arg[1] == sym.name), None)
+                
+                if param_info:
+                    if param_info[0] == 'CONST':
+                        # Cannot assign to CONST parameter!
+                        # Semantic analysis should catch this, but code gen should handle it or fail.
+                        # Assuming semantic analysis passed, this shouldn't happen for CONST.
+                        # But if it's a local variable shadowing a param? No, shadowing not allowed.
+                        pass
+                    else:
+                        # Indirect store
+                        self.emit("SWP b") # b = value
+                        self.emit(f"LOAD {sym.address}") # a = pointer
+                        self.emit("SWP b") # a = value, b = pointer
+                        self.emit("RSTORE b")
+                        return
 
             self.emit(f"STORE {sym.address}")
 
@@ -200,7 +263,25 @@ class CodeGenerator:
                 if isinstance(node.index, str):
                     # Load value of index variable
                     idx_sym = self.symbol_table.get(node.index)
-                    self.emit(f"LOAD {idx_sym.address}")
+                    
+                    # Check if index variable is a parameter (pointer or value)
+                    if self.current_scope != 'GLOBAL':
+                        current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                        idx_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == idx_sym.name), None)
+                        
+                        if idx_param_info:
+                            if idx_param_info[0] == 'CONST':
+                                # Passed by value. Just load it.
+                                self.emit(f"LOAD {idx_sym.address}")
+                            else:
+                                # Passed by reference. Load pointer, then value.
+                                self.emit(f"LOAD {idx_sym.address}")
+                                self.emit("SWP b")
+                                self.emit("RLOAD b")
+                        else:
+                            self.emit(f"LOAD {idx_sym.address}")
+                    else:
+                        self.emit(f"LOAD {idx_sym.address}")
                 else:
                     self.generate_constant(node.index)
             
@@ -209,18 +290,27 @@ class CodeGenerator:
             if sym.array_range is not None:
                 # Declared array: Address = base + index - start
                 start = sym.array_range[0]
-                # index in a
-                self.emit("STORE 0") # Save index
-                self.generate_constant(start) # start in a
-                self.emit("SWP b") # start in b
-                self.emit("LOAD 0") # index in a
-                self.emit("SUB b") # index - start
                 
-                # Add base address
-                # offset in a
-                self.emit("SWP b") # offset in b
-                self.generate_constant(sym.address) # base in a
-                self.emit("ADD b") # base + offset
+                if start == 0:
+                     # Address = base + index.
+                     # index in a.
+                     self.emit("SWP b") # index in b
+                     self.generate_constant(sym.address) # base in a
+                     self.emit("ADD b") # base + index
+                else:
+                    # index in a
+                    loc_idx = self.mem_spill_start + self.stack_depth
+                    self.emit(f"STORE {loc_idx}") # Save index
+                    self.generate_constant(start) # start in a
+                    self.emit("SWP b") # start in b
+                    self.emit(f"LOAD {loc_idx}") # index in a
+                    self.emit("SUB b") # index - start
+                    
+                    # Add base address
+                    # offset in a
+                    self.emit("SWP b") # offset in b
+                    self.generate_constant(sym.address) # base in a
+                    self.emit("ADD b") # base + offset
             else:
                 # Array parameter: Address = virtual_base + index
                 # sym.address holds the virtual_base pointer
@@ -237,16 +327,20 @@ class CodeGenerator:
             
         else:
             # Simple variable
-            # Check if it's a parameter (pointer)
+            # Check if it's a parameter
             if self.current_scope != 'GLOBAL':
                 current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
+                param_info = next((arg for arg in current_proc_info['args'] if arg[1] == sym.name), None)
                 
-                if is_param:
-                    # It's a pointer.
-                    self.emit(f"LOAD {sym.address}") # Load the pointer
-                    self.emit("SWP b")
-                    self.emit("RLOAD b") # Load value pointed to
+                if param_info:
+                    if param_info[0] == 'CONST':
+                        # Passed by value. Just load it.
+                        self.emit(f"LOAD {sym.address}")
+                    else:
+                        # Passed by reference. Load pointer, then value.
+                        self.emit(f"LOAD {sym.address}") # Load the pointer
+                        self.emit("SWP b")
+                        self.emit("RLOAD b") # Load value pointed to
                 else:
                     self.emit(f"LOAD {sym.address}")
             else:
@@ -329,6 +423,22 @@ class CodeGenerator:
         # Using register 'g' as temp
         
         if node.op in ['+', '-']:
+            # Check for INC/DEC optimizations first
+            if node.op == '+':
+                if isinstance(node.right, Number) and node.right.value == 1:
+                   self.visit(node.left)
+                   self.emit("INC a")
+                   return
+                if isinstance(node.left, Number) and node.left.value == 1:
+                   self.visit(node.right)
+                   self.emit("INC a")
+                   return
+            elif node.op == '-':
+                if isinstance(node.right, Number) and node.right.value == 1:
+                   self.visit(node.left)
+                   self.emit("DEC a")
+                   return
+
             self.visit(node.left)
             
             if self.stack_depth < len(self.reg_stack):
@@ -352,7 +462,7 @@ class CodeGenerator:
                     self.emit(f"SUB {reg}") # a = left - right
             else:
                 # Spill to memory
-                loc = self.mem_spill_start + (self.stack_depth - len(self.reg_stack))
+                loc = self.mem_spill_start + self.stack_depth
                 self.emit(f"STORE {loc}")
                 
                 self.stack_depth += 1
@@ -468,8 +578,8 @@ class CodeGenerator:
         else_label = self.get_new_label("IF_ELSE")
         end_label = self.get_new_label("IF_END")
         
-        self.visit(node.condition) # a has 1 (true) or 0 (false)
-        self.emit(f"JZERO {else_label}")
+        # Optimize: Jump to ELSE if condition is FALSE
+        self.emit_condition_jump(node.condition, else_label, jump_if_false=True)
         
         for cmd in node.then_commands:
             self.visit(cmd)
@@ -487,8 +597,9 @@ class CodeGenerator:
         end_label = self.get_new_label("WHILE_END")
         
         self.emit(f"{start_label}:")
-        self.visit(node.condition)
-        self.emit(f"JZERO {end_label}")
+        
+        # Optimize: Jump to END if condition is FALSE
+        self.emit_condition_jump(node.condition, end_label, jump_if_false=True)
         
         for cmd in node.commands:
             self.visit(cmd)
@@ -504,11 +615,129 @@ class CodeGenerator:
         for cmd in node.commands:
             self.visit(cmd)
             
-        self.visit(node.condition) # Wynik warunku w rejestrze 'a'
-        
         # Pętla REPEAT-UNTIL kończy się, gdy warunek jest prawdziwy.
         # Jeśli warunek jest fałszywy (0), skaczemy na początek.
-        self.emit(f"JZERO {start_label}")
+        # Optimize: Jump to START if condition is FALSE
+        self.emit_condition_jump(node.condition, start_label, jump_if_false=True)
+
+    def emit_condition_jump(self, node, label, jump_if_false=True):
+        # Generates code to jump to 'label' based on condition.
+        # If jump_if_false is True: Jump if condition is False (0).
+        # If jump_if_false is False: Jump if condition is True (1).
+        
+        # Optimize comparisons directly
+        if isinstance(node, Condition):
+            self.visit(node.left)
+            # Use g to store left operand
+            self.emit("SWP g")
+            
+            self.stack_depth += 1
+            self.visit(node.right)
+            self.stack_depth -= 1
+            # Right in a, Left in g
+            
+            if node.op == '<':
+                 # Cond: Left < Right <=> Right - Left > 0
+                 # False if: Right - Left == 0
+                 # Right (a) - Left (g)
+                 self.emit("SUB g")
+                 if jump_if_false:
+                     self.emit(f"JZERO {label}")
+                 else:
+                     self.emit(f"JPOS {label}")
+                 return
+
+            elif node.op == '>':
+                 # Cond: Left > Right <=> Left - Right > 0
+                 # False if: Left - Right == 0
+                 # Left (g) - Right (a)
+                 self.emit("SWP g")
+                 self.emit("SUB g")
+                 if jump_if_false:
+                     self.emit(f"JZERO {label}")
+                 else:
+                     self.emit(f"JPOS {label}")
+                 return
+                 
+            elif node.op == '<=':
+                 # Cond: Left <= Right <=> NOT (Left > Right)
+                 # False if: Left > Right <=> Left - Right > 0
+                 # Left (g) - Right (a)
+                 self.emit("SWP g")
+                 self.emit("SUB g") 
+                 # If a > 0 (True), then Left > Right, so Left <= Right is False.
+                 if jump_if_false:
+                     self.emit(f"JPOS {label}")
+                 else:
+                     self.emit(f"JZERO {label}")
+                 return
+
+            elif node.op == '>=':
+                 # Cond: Left >= Right <=> NOT (Left < Right)
+                 # False if: Left < Right <=> Right - Left > 0
+                 # Right (a) - Left (g)
+                 self.emit("SUB g") 
+                 # If a > 0, then Right > Left, so Left < Right.
+                 if jump_if_false:
+                     self.emit(f"JPOS {label}")
+                 else:
+                     self.emit(f"JZERO {label}")
+                 return
+            
+            elif node.op == '=':
+                 # Cond: Left == Right
+                 # False if: Left != Right
+                 # Left in g, Right in a
+                 self.emit("STORE 1") # Right -> 1
+                 self.emit("SWP g") # Left -> a
+                 self.emit("STORE 0") # Left -> 0
+                 
+                 # a-b
+                 self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SUB b"); self.emit("STORE 2")
+                 # b-a
+                 self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SUB b"); self.emit("SWP b"); self.emit("LOAD 2"); self.emit("ADD b")
+                 
+                 # Result in a is (a-b)+(b-a). 
+                 # If a == b, then 0.
+                 # If a != b, then > 0.
+                 
+                 if jump_if_false:
+                     # Jump if a != b (False) => Jump if a > 0
+                     self.emit(f"JPOS {label}")
+                 else:
+                     # Jump if a == b (True) => Jump if a == 0
+                     self.emit(f"JZERO {label}")
+                 return
+            
+            elif node.op == '!=':
+                 # Cond: Left != Right
+                 # False if: Left == Right
+                 
+                 self.emit("STORE 1")
+                 self.emit("SWP g")
+                 self.emit("STORE 0")
+                 
+                 # a-b
+                 self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SUB b"); self.emit("STORE 2")
+                 # b-a
+                 self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SUB b"); self.emit("SWP b"); self.emit("LOAD 2"); self.emit("ADD b")
+                 
+                 # Result in a > 0 if !=, 0 if ==.
+                 
+                 if jump_if_false:
+                     # Jump if a == b (False) => Jump if a == 0
+                     self.emit(f"JZERO {label}")
+                 else:
+                     # Jump if a != b (True) => Jump if a > 0
+                     self.emit(f"JPOS {label}")
+                 return
+
+        # Fallback: Evaluate condition to 0 or 1, then jump
+        self.visit(node) # Result in a
+        if jump_if_false:
+            self.emit(f"JZERO {label}")
+        else:
+            self.emit(f"JPOS {label}")
 
     def visit_For(self, node):
         self.visit(node.start_expr)
@@ -527,24 +756,51 @@ class CodeGenerator:
         self.emit(f"{start_label}:")
         
         # Check condition: i <= limit (TO) or i >= limit (DOWNTO)
-        self.emit(f"LOAD {sym.address}")
-        self.emit("STORE 0") # i in 0
+        # We need to compute a - b, checking saturating arithmetic.
         
         self.emit(f"LOAD {limit_address}")
-        self.emit("STORE 1") # limit in 1
+        self.emit("STORE 1")
+        self.emit(f"LOAD {sym.address}")
+        self.emit("STORE 0")
         
-        if not node.down_to: # TO
-            self.emit("LOAD 0") # i
-            self.emit("SUB 1")  # i - limit
+        # 3. Initial Empty Range Check
+        if not node.down_to: # TO: if i > limit (i - limit > 0) -> Skip
+            self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SWP b"); self.emit("SUB b")
             self.emit(f"JPOS {end_label}")
-        else: # DOWNTO
-            self.emit("LOAD 1") # limit
-            self.emit("SUB 0")  # limit - i
+        else: # DOWNTO: if limit > i (limit - i > 0) -> Skip
+            self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SWP b"); self.emit("SUB b")
             self.emit(f"JPOS {end_label}")
-            
+
+        self.emit(f"{start_label}:")
+        
         for cmd in node.commands:
             self.visit(cmd)
-            
+
+        # Check for termination condition (Iter == Limit)
+        # We load iter and limit again because body might have used registers (though usually preserved in Mem)
+        self.emit(f"LOAD {sym.address}")
+        self.emit("STORE 0")
+        self.emit(f"LOAD {limit_address}")
+        self.emit("STORE 1")
+        
+        # Optimized Termination Check
+        if not node.down_to:
+             # TO Loop. Invariant i <= limit.
+             # Check limit - i.
+             # If 0 => i >= limit => i == limit => END.
+             # If >0 => i < limit => CONTINUE.
+             self.emit("LOAD 1"); self.emit("SWP b"); self.emit("LOAD 0"); self.emit("SWP b"); self.emit("SUB b") # limit - i
+             self.emit(f"JZERO {end_label}")
+        else:
+             # DOWNTO Loop. Invariant i >= limit.
+             # Check i - limit.
+             # If 0 => limit >= i => i == limit => END.
+             # If >0 => i > limit => CONTINUE.
+             self.emit("LOAD 0"); self.emit("SWP b"); self.emit("LOAD 1"); self.emit("SWP b"); self.emit("SUB b") # i - limit
+             self.emit(f"JZERO {end_label}")
+        
+        self.emit(f"{end_label}_CONTINUE:")
+        
         # Update iterator
         self.emit(f"LOAD {sym.address}")
         if not node.down_to:
@@ -565,17 +821,13 @@ class CodeGenerator:
         # Use g to store left operand
         self.emit("SWP g")
         
+        self.stack_depth += 1
         self.visit(node.right)
+        self.stack_depth -= 1
         # Right in a, Left in g
         
         # EQ: a == b <=> a-b == 0 AND b-a == 0
-        if node.op == '=':
-            # Check a-b
-            self.emit("SWP g") # a=Left, g=Right
-            self.emit("SUB g") # Left - Right
-            self.emit("STORE 2") # Save result 1
-            
-            pass
+
         
         if node.op == '<':
             # b - a > 0
@@ -664,7 +916,8 @@ class CodeGenerator:
          # 1 - a
          self.emit("STORE 2")
          self.emit("RST a"); self.emit("INC a") # 1
-         self.emit("SWP b"); self.emit("LOAD 2"); self.emit("SUB b") 
+         # a=1. Want 1 - val.
+         self.emit("SWP b"); self.emit("LOAD 2"); self.emit("SWP b"); self.emit("SUB b") 
 
     def generate_division(self):
         # Inputs: Mem[0] (Dividend A), Mem[1] (Divisor B)
@@ -849,7 +1102,7 @@ class CodeGenerator:
         self.emit(f"{lbl_zero}:")
 
     def visit_ProcCall(self, node):
-        # Args are passed by reference.
+        # Args are passed by reference or value.
         
         proc_syms = self.symbol_table.get_all_in_scope(node.name)
         proc_info = self.symbol_table.get_procedure(node.name)
@@ -858,36 +1111,47 @@ class CodeGenerator:
         for i, arg_expr in enumerate(node.args):
             arg_sym = self.symbol_table.get(arg_expr)
             param_name = args_info[i][1]
+            param_type = args_info[i][0]
             param_sym = proc_syms[param_name]
             
-            # Calculate address to pass
-            
-            if self.current_scope != 'GLOBAL':
-                # Check if arg_sym is a parameter of current scope
-                current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == arg_sym.name for arg in current_proc_info['args'])
+            if param_type == 'CONST': # Passed by Value (I)
+                self.visit_Identifier(Identifier(arg_expr))
+            else: # Passed by Reference (VAR, OUT, ARRAY)
+                # Calculate address to pass
                 
-                if is_param:
-                    # It's a pointer. Load the value (which is the address).
-                    self.emit(f"LOAD {arg_sym.address}")
+                if self.current_scope != 'GLOBAL':
+                    # Check if arg_sym is a parameter of current scope
+                    current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                    arg_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == arg_sym.name), None)
+                    
+                    if arg_param_info:
+                        # It's a parameter.
+                        if arg_param_info[0] == 'CONST':
+                            # It's a local value. Pass its address.
+                            self.generate_constant(arg_sym.address)
+                        else:
+                            # It's a pointer. Load the value (which is the address).
+                            self.emit(f"LOAD {arg_sym.address}")
+                    else:
+                        # It's a local variable. Load its address (constant).
+                        self.generate_constant(arg_sym.address)
                 else:
-                    # It's a local variable. Load its address (constant).
+                    # Global variable. Load its address.
                     self.generate_constant(arg_sym.address)
-            else:
-                # Global variable. Load its address.
-                self.generate_constant(arg_sym.address)
+                
+                # If passing an ARRAY declared with range, adjust base.
+                if arg_sym.type == 'ARRAY' and arg_sym.array_range is not None:
+                    start_index = arg_sym.array_range[0]
+                    # Use spill registers to allow recursion/nested calls without clobbering 0/1
+                    loc_addr = self.mem_spill_start + self.stack_depth
+                    loc_start = self.mem_spill_start + self.stack_depth + 1
+                    
+                    self.emit(f"STORE {loc_addr}") # Save address
+                    self.generate_constant(start_index)
+                    self.emit(f"STORE {loc_start}") # Save start_index
+                    self.emit(f"LOAD {loc_addr}"); self.emit("SWP b"); self.emit(f"LOAD {loc_start}"); self.emit("SWP b"); self.emit("SUB b") # address - start_index
             
-            # If passing an ARRAY declared with range, adjust base.
-            if arg_sym.type == 'ARRAY' and arg_sym.array_range is not None:
-                start_index = arg_sym.array_range[0]
-                # a has address.
-                # a = a - start_index
-                self.emit("STORE 0") # Save address
-                self.generate_constant(start_index)
-                self.emit("STORE 1") # Save start_index
-                self.emit("LOAD 0"); self.emit("SUB 1") # address - start_index
-            
-            # Store a (the address) into the parameter location of the callee
+            # Store a (the address or value) into the parameter location of the callee
             self.emit(f"STORE {param_sym.address}")
             
         self.emit(f"CALL PROC_{node.name}")
@@ -909,7 +1173,25 @@ class CodeGenerator:
                 self.generate_constant(node.identifier.index)
             elif isinstance(node.identifier.index, str):
                 idx_sym = self.symbol_table.get(node.identifier.index)
-                self.emit(f"LOAD {idx_sym.address}")
+                
+                # Check if index variable is a parameter (pointer or value)
+                if self.current_scope != 'GLOBAL':
+                    current_proc_info = self.symbol_table.get_procedure(self.current_scope)
+                    idx_param_info = next((arg for arg in current_proc_info['args'] if arg[1] == idx_sym.name), None)
+                    
+                    if idx_param_info:
+                        if idx_param_info[0] == 'CONST':
+                            # Passed by value. Just load it.
+                            self.emit(f"LOAD {idx_sym.address}")
+                        else:
+                            # Passed by reference. Load pointer, then value.
+                            self.emit(f"LOAD {idx_sym.address}")
+                            self.emit("SWP b")
+                            self.emit("RLOAD b")
+                    else:
+                        self.emit(f"LOAD {idx_sym.address}")
+                else:
+                    self.emit(f"LOAD {idx_sym.address}")
             else:
                 self.generate_constant(node.identifier.index)
             
@@ -944,17 +1226,22 @@ class CodeGenerator:
             
         else:
             # Simple variable
-            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY']:
+            if sym.scope != 'GLOBAL' and sym.type in ['VAR', 'ARRAY', 'OUT']:
                 # Check if param
                 current_proc_info = self.symbol_table.get_procedure(self.current_scope)
-                is_param = any(arg[1] == sym.name for arg in current_proc_info['args'])
-                if is_param:
-                    # Pointer. Load address to b.
-                    self.emit(f"LOAD {sym.address}")
-                    self.emit("SWP b")
-                    self.emit("READ")
-                    self.emit("RSTORE b")
-                    return
+                param_info = next((arg for arg in current_proc_info['args'] if arg[1] == sym.name), None)
+                
+                if param_info:
+                    if param_info[0] == 'CONST':
+                        # Cannot read into CONST parameter!
+                        pass
+                    else:
+                        # Pointer. Load address to b.
+                        self.emit(f"LOAD {sym.address}")
+                        self.emit("SWP b")
+                        self.emit("READ")
+                        self.emit("RSTORE b")
+                        return
 
             # Normal variable
             self.emit("READ")
