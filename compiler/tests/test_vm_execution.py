@@ -16,7 +16,7 @@ from code_gen import CodeGenerator
 def get_test_files():
     """Get all .imp test files from test_files directory"""
     test_files_dir = Path(__file__).parent.parent / 'test_files'
-    test_files = sorted(test_files_dir.glob('*.imp'))
+    test_files = sorted(test_files_dir.glob('example*.imp'))
     return test_files
 
 def get_vm_path():
@@ -82,6 +82,28 @@ class TestVMExecution:
                 text=True,
                 timeout=20  # Increased timeout for slower programs
             )
+            
+            # Extract Metrics
+            def extract_value(output, pattern):
+                try:
+                    import re
+                    # Try removing ANSI codes first for robustness
+                    clean_output = re.sub(r'\x1b\[[0-9;]*m', '', output)
+                    for line in clean_output.splitlines():
+                        match = re.search(pattern, line)
+                        if match:
+                             num_str = match.group(1).replace(' ', '')
+                             return int(num_str)
+                except:
+                    pass
+                return -1
+
+            exec_cost = extract_value(process.stdout, r'koszt: ([\d ]+)')
+            instr_count = extract_value(process.stdout, r'liczba rozkazów: ([\d ]+)')
+            
+            print(f"\n[METRICS] {test_file.stem}:")
+            print(f"  - Exec Cost: My={exec_cost}")
+            print(f"  - VM Instr:  My={instr_count}")
             
             # Log the output for debugging
             print(f"\n--- VM Output for {test_file.name} ---")

@@ -7,15 +7,12 @@ SHL a
 SHL a
 SHL a
 SHL a
-INC a
 SHL a
 SHL a
-INC a
 SHL a
-INC a
+SHL a
 SHL a
 SWP h
-JUMP 18
 READ
 STORE 20
 STORE 21
